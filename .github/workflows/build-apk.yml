@@ -75,3 +75,4 @@ jobs:
         with:
           name: MK-Chat-APK
           path: android/app/build/outputs/apk/debug/app-debug.apk
+          
