@@ -28,11 +28,7 @@ jobs:
       - name: Install Capacitor
         run: |
           npm install @capacitor/core @capacitor/cli @capacitor/android
-          
-      - name: Install Capacitor Assets
-        run: |
-          npm install -g @capacitor/assets
-          
+
       - name: Create package.json if needed
         run: |
           if [ ! -f package.json ]; then
@@ -46,14 +42,50 @@ jobs:
       - name: Add Android platform
         run: |
           npx cap add android
-          
+
       - name: Sync web files
         run: |
           npx cap sync android
 
-      - name: Generate Android icons
+      - name: Install Pillow
         run: |
-          npx capacitor-assets generate --android
+          pip install Pillow
+
+      - name: Set MK Chat Android Icon
+        run: |
+          python3 - <<'PY'
+          from PIL import Image
+          import os
+
+          src = "assets/icon-only.png"
+
+          if not os.path.exists(src):
+              raise SystemExit("icon-only.png not found")
+
+          img = Image.open(src).convert("RGBA")
+
+          sizes = {
+              "mdpi": 48,
+              "hdpi": 72,
+              "xhdpi": 96,
+              "xxhdpi": 144,
+              "xxxhdpi": 192
+          }
+
+          base = "android/app/src/main/res"
+
+          for density, size in sizes.items():
+              folder = os.path.join(base, f"mipmap-{density}")
+              os.makedirs(folder, exist_ok=True)
+
+              output = os.path.join(folder, "ic_launcher.png")
+              img.resize((size, size), Image.Resampling.LANCZOS).save(output)
+
+              output_round = os.path.join(folder, "ic_launcher_round.png")
+              img.resize((size, size), Image.Resampling.LANCZOS).save(output_round)
+
+          print("MK Chat icon installed successfully.")
+          PY
 
       - name: Fix Kotlin duplicate dependencies
         working-directory: android
@@ -63,7 +95,7 @@ jobs:
           echo "    exclude group: 'org.jetbrains.kotlin', module: 'kotlin-stdlib-jdk7'" >> app/build.gradle
           echo "    exclude group: 'org.jetbrains.kotlin', module: 'kotlin-stdlib-jdk8'" >> app/build.gradle
           echo "}" >> app/build.gradle
-          
+
       - name: Build APK
         working-directory: android
         run: |
@@ -75,4 +107,3 @@ jobs:
         with:
           name: MK-Chat-APK
           path: android/app/build/outputs/apk/debug/app-debug.apk
-          
