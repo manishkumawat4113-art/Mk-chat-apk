@@ -86,11 +86,37 @@ jobs:
 
           print("MK Chat icon installed successfully.")
           PY
-      - name: Force launcher icon
+            - name: Force MK Chat launcher icon
         run: |
           python3 - <<'PY'
+          import os
           import re
 
+          res = "android/app/src/main/res"
+
+          # Remove default Capacitor adaptive launcher icons
+          adaptive_dirs = [
+              "mipmap-anydpi-v26",
+              "mipmap-anydpi-v27",
+              "mipmap-anydpi-v31",
+              "mipmap-anydpi-v33"
+          ]
+
+          for directory in adaptive_dirs:
+              path = os.path.join(res, directory)
+
+              if os.path.isdir(path):
+                  for filename in [
+                      "ic_launcher.xml",
+                      "ic_launcher_round.xml"
+                  ]:
+                      file_path = os.path.join(path, filename)
+
+                      if os.path.exists(file_path):
+                          os.remove(file_path)
+                          print("Removed:", file_path)
+
+          # Force AndroidManifest to use our PNG launcher icons
           manifest = "android/app/src/main/AndroidManifest.xml"
 
           with open(manifest, "r", encoding="utf-8") as f:
@@ -113,9 +139,8 @@ jobs:
           with open(manifest, "w", encoding="utf-8") as f:
               f.write(data)
 
-          print("Launcher icon forced to MK Chat icon.")
+          print("MK Chat PNG launcher icon forced successfully.")
           PY
-
       - name: Fix Kotlin duplicate dependencies
         working-directory: android
         run: |
