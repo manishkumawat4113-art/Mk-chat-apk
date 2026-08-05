@@ -442,6 +442,12 @@ loginBtn.addEventListener(
                 result.success
             ) {
 
+                // JWT save
+                localStorage.setItem(
+                    "token",
+                    result.token
+                );
+
                 // User save
                 localStorage.setItem(
                     "currentUser",
@@ -450,13 +456,20 @@ loginBtn.addEventListener(
                     )
                 );
 
+// ============================================================
+// SAVE OFFLINE LOGIN SESSION
+// ============================================================
 
-                // JWT save
-                localStorage.setItem(
-                    "token",
-                    result.token
-                );
+await MKOfflineDB.setSetting(
+    "offlineLogin",
+    {
+        token: result.token,
+        user: result.user
+    }
+);
 
+console.log("✅ Offline login session saved");
+                
 
                 // Username show
                 document.querySelector(
@@ -512,31 +525,50 @@ loadChats();
 
 
 // ============================================================
-// AUTO LOGIN
+// AUTO LOGIN + OFFLINE AUTO LOGIN
 // ============================================================
 
 window.addEventListener(
     "load",
-    function () {
+    async function () {
 
-        let savedUser =
-            localStorage.getItem(
-                "currentUser"
-            );
+        try {
 
+            // ==================================================
+            // STEP 1: Normal localStorage OR Offline DB session
+            // ==================================================
 
-        let savedToken =
-            localStorage.getItem(
-                "token"
-            );
+            const loggedIn =
+                await checkOfflineAutoLogin();
 
 
-        if (
-            savedUser &&
-            savedToken
-        ) {
+            // ==================================================
+            // STEP 2: Login session mila
+            // ==================================================
 
-            try {
+            if (loggedIn) {
+
+                let savedUser =
+                    localStorage.getItem(
+                        "currentUser"
+                    );
+
+
+                if (!savedUser) {
+
+                    console.log(
+                        "❌ User data not found"
+                    );
+
+                    screen1.style.display =
+                        "block";
+
+                    homeScreen.style.display =
+                        "none";
+
+                    return;
+                }
+
 
                 let user =
                     JSON.parse(
@@ -544,38 +576,93 @@ window.addEventListener(
                     );
 
 
+                // ==================================================
+                // USERNAME
+                // ==================================================
+
                 document.querySelector(
                     "#userName"
                 ).textContent =
                     user.username;
 
 
+                // ==================================================
+                // LOGIN SCREEN HIDE
+                // ==================================================
+
                 screen1.style.display =
                     "none";
 
+
+                // ==================================================
+                // HOME SCREEN SHOW
+                // ==================================================
 
                 homeScreen.style.display =
                     "block";
 
 
-                // Socket room
-                joinUserRoom();
-                
+                // ==================================================
+                // SOCKET ROOM
+                // ==================================================
+
+                // Internet hai tabhi socket connect/join
+                if (navigator.onLine) {
+
+                    joinUserRoom();
+
+                } else {
+
+                    console.log(
+                        "📴 Offline - Socket join skipped"
+                    );
+
+                }
+
+
+                // ==================================================
+                // CHAT LIST
+                // ==================================================
+
                 loadChats();
 
-            }
 
-            catch (error) {
-
-                console.error(
-                    error
+                console.log(
+                    "✅ MK Chat Auto Login Complete"
                 );
 
             }
 
-        }
 
-        else {
+            // ==================================================
+            // STEP 3: Login session nahi mila
+            // ==================================================
+
+            else {
+
+                screen1.style.display =
+                    "block";
+
+                homeScreen.style.display =
+                    "none";
+
+
+                console.log(
+                    "➡️ Login required"
+                );
+
+            }
+
+
+        } catch (error) {
+
+            console.error(
+                "❌ Auto Login Error:",
+                error
+            );
+
+
+            // Error hone par login screen
 
             screen1.style.display =
                 "block";
