@@ -47,13 +47,13 @@ jobs:
         run: |
           npx cap add android
           
-      - name: Generate Android icons
-        run: |
-          npx capacitor-assets generate --android
-          
       - name: Sync web files
         run: |
           npx cap sync android
+
+      - name: Generate Android icons
+        run: |
+          npx capacitor-assets generate --android
 
       - name: Fix Kotlin duplicate dependencies
         working-directory: android
