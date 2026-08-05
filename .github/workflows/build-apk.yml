@@ -86,6 +86,35 @@ jobs:
 
           print("MK Chat icon installed successfully.")
           PY
+      - name: Force launcher icon
+        run: |
+          python3 - <<'PY'
+          import re
+
+          manifest = "android/app/src/main/AndroidManifest.xml"
+
+          with open(manifest, "r", encoding="utf-8") as f:
+              data = f.read()
+
+          data = re.sub(
+              r'android:icon="[^"]*"',
+              'android:icon="@mipmap/ic_launcher"',
+              data,
+              count=1
+          )
+
+          data = re.sub(
+              r'android:roundIcon="[^"]*"',
+              'android:roundIcon="@mipmap/ic_launcher_round"',
+              data,
+              count=1
+          )
+
+          with open(manifest, "w", encoding="utf-8") as f:
+              f.write(data)
+
+          print("Launcher icon forced to MK Chat icon.")
+          PY
 
       - name: Fix Kotlin duplicate dependencies
         working-directory: android
