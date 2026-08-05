@@ -4154,77 +4154,7 @@ minute:"2-digit"
 `;
 
 div.addEventListener(
-    "click",
-    function () {
 
-        localStorage.setItem(
-            "selectedUserId",
-            chat.userId
-            
-        );
-
-
-        // Chat username element
-        const chatUserName =
-            document.querySelector(
-                "#chatUserName"
-            );
-
-
-        chatUserName.textContent =
-            chat.username;
-
-
-        // ==================================================
-        // USERNAME CLICK → PROFILE
-        // ==================================================
-
-        chatUserName.onclick =
-            function () {
-
-                profileOpenedFrom = "chat";
-
-                localStorage.setItem(
-                    "selectedUserId",
-                    chat.userId
-                );
-
-                
-
-                document.querySelector(
-    "#profileName"
-).textContent =
-    "👤 " +
-    chat.name;
-
-
-document.querySelector(
-    "#profileUsername"
-).textContent =
-    "@" +
-    chat.username;
-
-
-document.querySelector(
-    "#profileEmail"
-).textContent =
-    chat.email ||
-    "";
-
-
-document.querySelector(
-    "#profileBio"
-).textContent =
-    chat.about ||
-    "Hello! I'm using MK Chat";
-
-           const joinedDate =
-    new Date(chat.createdAt);
-
-document.querySelector(
-    "#profileJoined"
-).textContent =
-    joinedDate.toLocaleDateString(
 // ============================================================
 // LOAD CHATS - OFFLINE FIRST + ONLINE SYNC
 // ============================================================
