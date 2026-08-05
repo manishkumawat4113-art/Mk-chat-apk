@@ -47,9 +47,9 @@ jobs:
         run: |
           npx cap sync android
 
-            - name: Fix Kotlin duplicate dependencies
-              working-directory: android
-              run: |
+      - name: Fix Kotlin duplicate dependencies
+        working-directory: android
+        run: |
           echo "" >> app/build.gradle
           echo "configurations.all {" >> app/build.gradle
           echo "    exclude group: 'org.jetbrains.kotlin', module: 'kotlin-stdlib-jdk7'" >> app/build.gradle
