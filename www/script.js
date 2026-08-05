@@ -2,6 +2,7 @@
 // MK CHAT - COMPLETE FRONTEND JS
 // BACKEND + MONGODB + JWT + SOCKET.IO
 // ============================================================
+alert("script.js LOADED");
 const BACKEND_URL ="https://mk-web-backend.onrender.com";
 
 // ============================================================
