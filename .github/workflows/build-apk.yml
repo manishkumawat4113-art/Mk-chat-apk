@@ -28,7 +28,11 @@ jobs:
       - name: Install Capacitor
         run: |
           npm install @capacitor/core @capacitor/cli @capacitor/android
-
+          
+      - name: Install Capacitor Assets
+        run: |
+          npm install -g @capacitor/assets
+          
       - name: Create package.json if needed
         run: |
           if [ ! -f package.json ]; then
@@ -42,7 +46,11 @@ jobs:
       - name: Add Android platform
         run: |
           npx cap add android
-
+          
+      - name: Generate Android icons
+        run: |
+          npx capacitor-assets generate --android
+          
       - name: Sync web files
         run: |
           npx cap sync android
