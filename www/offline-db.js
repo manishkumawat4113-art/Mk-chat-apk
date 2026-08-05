@@ -2,7 +2,7 @@
 // MK CHAT - OFFLINE DATABASE
 // Local browser/Android storage using IndexedDB
 // ============================================================
-
+alert("offline-db.js LOADED");
 (function () {
 
     const DB_NAME = "MKChatOfflineDB";
