@@ -4605,7 +4605,408 @@ if (!navigator.onLine) {
     // GET FRESH CHATS FROM SERVER
     // ========================================================
 
+// ============================================================
+// LOAD CHATS - OFFLINE FIRST + ONLINE SYNC
+// ============================================================
+
+async function loadChats() {
+
+    console.log("📱 MK Chat: Loading chats...");
+
+    // ========================================================
+    // CURRENT USER
+    // ========================================================
+
+    let currentUser = null;
+
     try {
+
+        currentUser =
+            JSON.parse(
+                localStorage.getItem("currentUser")
+            );
+
+    } catch (error) {
+
+        console.error(
+            "❌ Current user error:",
+            error
+        );
+
+        return;
+    }
+
+
+    if (!currentUser) {
+
+        console.log(
+            "❌ Current user not found"
+        );
+
+        return;
+    }
+
+
+    // ========================================================
+    // RENDER CHAT LIST
+    // ========================================================
+
+    function renderChats(chats) {
+
+        const chatList =
+            document.querySelector("#chatList");
+
+        if (!chatList) {
+
+            console.log(
+                "❌ #chatList not found"
+            );
+
+            return;
+        }
+
+
+        chatList.innerHTML = "";
+
+
+        chats.forEach(function(chat) {
+
+            const div =
+                document.createElement("div");
+
+            div.className =
+                "chatItem";
+
+
+            const time =
+                chat.lastMessageTime
+                ?
+                new Date(chat.lastMessageTime)
+                :
+                null;
+
+
+            div.innerHTML = `
+
+                <div>
+
+                    <h3>
+                        ${chat.username || "Unknown"}
+
+                        ${
+                            chat.unreadCount > 0
+                            ?
+                            `<span class="unreadBadge">
+                                ${chat.unreadCount}
+                            </span>`
+                            :
+                            ""
+                        }
+
+                    </h3>
+
+
+                    <p class="lastMessage">
+
+                        ${chat.lastMessage || ""}
+
+
+                        ${
+                            String(chat.lastMessageSenderId) ===
+                            String(currentUser.id)
+
+                            ?
+
+                            (
+                                chat.lastMessageStatus === "read"
+
+                                ?
+
+                                " <span style='color:#2196F3'>✓✓</span>"
+
+                                :
+
+                                chat.lastMessageStatus === "delivered"
+
+                                ?
+
+                                " ✓✓"
+
+                                :
+
+                                " ✓"
+                            )
+
+                            :
+
+                            ""
+                        }
+
+                    </p>
+
+                </div>
+
+
+                <span class="lastTime">
+
+                    ${
+                        time
+                        ?
+                        time.toLocaleTimeString(
+                            [],
+                            {
+                                hour: "2-digit",
+                                minute: "2-digit"
+                            }
+                        )
+                        :
+                        ""
+                    }
+
+                </span>
+
+            `;
+
+
+            // =================================================
+            // OPEN CHAT
+            // =================================================
+
+            div.addEventListener(
+                "click",
+                function () {
+
+                    localStorage.setItem(
+                        "selectedUserId",
+                        chat.userId
+                    );
+
+
+                    // -----------------------------------------
+                    // CHAT USERNAME
+                    // -----------------------------------------
+
+                    const chatUserName =
+                        document.querySelector(
+                            "#chatUserName"
+                        );
+
+
+                    if (chatUserName) {
+
+                        chatUserName.textContent =
+                            chat.username || "Unknown";
+
+
+                        // =====================================
+                        // PROFILE
+                        // =====================================
+
+                        chatUserName.onclick =
+                            function () {
+
+                                profileOpenedFrom =
+                                    "chat";
+
+
+                                localStorage.setItem(
+                                    "selectedUserId",
+                                    chat.userId
+                                );
+
+
+                                document.querySelector(
+                                    "#profileName"
+                                ).textContent =
+                                    "👤 " +
+                                    (chat.name || "Unknown");
+
+
+                                document.querySelector(
+                                    "#profileUsername"
+                                ).textContent =
+                                    "@" +
+                                    (chat.username || "");
+
+
+                                document.querySelector(
+                                    "#profileEmail"
+                                ).textContent =
+                                    chat.email || "";
+
+
+                                document.querySelector(
+                                    "#profileBio"
+                                ).textContent =
+                                    chat.about ||
+                                    "Hello! I'm using MK Chat";
+
+
+                                if (chat.createdAt) {
+
+                                    const joinedDate =
+                                        new Date(
+                                            chat.createdAt
+                                        );
+
+
+                                    document.querySelector(
+                                        "#profileJoined"
+                                    ).textContent =
+                                        joinedDate.toLocaleDateString(
+                                            "en-IN",
+                                            {
+                                                day: "numeric",
+                                                month: "long",
+                                                year: "numeric"
+                                            }
+                                        );
+                                }
+
+
+                                editProfileBtn.textContent =
+                                    "Message";
+
+
+                                editProfileBtn.dataset.mode =
+                                    "message";
+
+
+                                chatScreen.style.display =
+                                    "none";
+
+
+                                profileScreen.style.display =
+                                    "block";
+
+                            };
+
+                    }
+
+
+                    // -----------------------------------------
+                    // OPEN CHAT SCREEN
+                    // -----------------------------------------
+
+                    homeScreen.style.display =
+                        "none";
+
+
+                    chatScreen.style.display =
+                        "block";
+
+
+                    // Internet ho tabhi status request
+                    if (navigator.onLine) {
+
+                        loadUserStatus();
+
+                    }
+
+
+                    // Messages
+                    loadMessages();
+
+                }
+            );
+
+
+            chatList.appendChild(div);
+
+        });
+
+    }
+
+
+    // ========================================================
+    // STEP 1
+    // LOCAL DATABASE SE CHAT LIST
+    // ALWAYS LOAD FIRST
+    // ========================================================
+
+    try {
+
+        const localChats =
+            await MKOfflineDB.getAllChats();
+
+
+        if (
+            localChats &&
+            localChats.length > 0
+        ) {
+
+            console.log(
+                "📦 Local chats:",
+                localChats.length
+            );
+
+
+            // ⚡ Immediately show cached chats
+            renderChats(localChats);
+
+        } else {
+
+            console.log(
+                "📭 No cached chats found"
+            );
+
+        }
+
+    } catch (error) {
+
+        console.error(
+            "❌ IndexedDB chat error:",
+            error
+        );
+
+    }
+
+
+    // ========================================================
+    // STEP 2
+    // INTERNET CHECK
+    // ========================================================
+
+    if (!navigator.onLine) {
+
+        console.log(
+            "📴 Offline → Server request skipped"
+        );
+
+        return;
+    }
+
+
+    // ========================================================
+    // STEP 3
+    // GET TOKEN
+    // ========================================================
+
+    const token =
+        localStorage.getItem("token");
+
+
+    if (!token) {
+
+        console.log(
+            "❌ Token not found"
+        );
+
+        return;
+    }
+
+
+    // ========================================================
+    // STEP 4
+    // SERVER SYNC
+    // ========================================================
+
+    try {
+
+        console.log(
+            "☁️ Getting fresh chats from server..."
+        );
+
 
         const response =
             await fetch(
@@ -4613,6 +5014,8 @@ if (!navigator.onLine) {
                 `${BACKEND_URL}/api/chats`,
 
                 {
+
+                    method: "GET",
 
                     headers: {
 
@@ -4626,6 +5029,16 @@ if (!navigator.onLine) {
             );
 
 
+        if (!response.ok) {
+
+            throw new Error(
+                "Server HTTP Error: " +
+                response.status
+            );
+
+        }
+
+
         const result =
             await response.json();
 
@@ -4633,17 +5046,16 @@ if (!navigator.onLine) {
         if (!result.success) {
 
             console.log(
-                "❌ Server chat loading failed"
+                "❌ Server chat response failed"
             );
 
             return;
-
         }
 
 
         // ====================================================
-        // STEP 4
-        // SAVE FRESH CHATS INTO INDEXEDDB
+        // STEP 5
+        // SAVE SERVER CHATS LOCALLY
         // ====================================================
 
         for (
@@ -4656,8 +5068,8 @@ if (!navigator.onLine) {
 
             } catch (error) {
 
-                console.log(
-                    "❌ Chat offline save error:",
+                console.error(
+                    "❌ Offline save error:",
                     error
                 );
 
@@ -4667,28 +5079,38 @@ if (!navigator.onLine) {
 
 
         console.log(
-            "☁️ Fresh chats synced to offline DB"
+            "✅ Chats synced to IndexedDB"
         );
 
 
         // ====================================================
-        // STEP 5
+        // STEP 6
         // SHOW FRESH SERVER DATA
         // ====================================================
 
-        renderChats(result.chats);
+        renderChats(
+            result.chats
+        );
 
 
     } catch (error) {
 
+        // ====================================================
+        // SERVER FAILED
+        // ====================================================
+
         console.log(
-            "🌐 Server unavailable:",
-            error
+            "🌐 Server unavailable."
+        );
+
+        console.log(
+            "📦 Keeping local chats."
         );
 
 
-        // Local data already screen par hai,
-        // isliye offline/error screen nahi dikhegi.
+        // IMPORTANT:
+        // Yaha error throw nahi karna.
+        // Local chats already screen par hain.
 
     }
 
