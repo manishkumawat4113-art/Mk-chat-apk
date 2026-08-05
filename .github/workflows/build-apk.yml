@@ -86,7 +86,7 @@ jobs:
 
           print("MK Chat icon installed successfully.")
           PY
-            - name: Force MK Chat launcher icon
+      - name: Force MK Chat launcher icon
         run: |
           python3 - <<'PY'
           import os
