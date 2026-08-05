@@ -1434,3 +1434,63 @@ body.dark-mode #searchResult .user {
 body.dark-mode #searchResult .user:hover {
     background: #2a3942 !important;
 }
+
+/* ===========================
+   FORWARD MODAL - DARK MODE
+=========================== */
+
+body.dark-mode .forwardModal {
+    background: rgba(0,0,0,0.75) !important;
+}
+
+body.dark-mode .forwardBox {
+    background: #202c33 !important;
+    color: #e9edef !important;
+}
+
+body.dark-mode .forwardHeader {
+    background: #202c33 !important;
+    border-bottom: 1px solid #2a3942;
+}
+
+body.dark-mode .forwardHeader h2 {
+    color: #e9edef !important;
+}
+
+body.dark-mode .forwardHeader button {
+    color: #e9edef !important;
+}
+
+body.dark-mode #forwardSearchInput {
+    background: #111b21 !important;
+    color: #e9edef !important;
+    border: 1px solid #2a3942 !important;
+}
+
+body.dark-mode #forwardSearchInput::placeholder {
+    color: #8696a0 !important;
+}
+
+body.dark-mode .forwardUser {
+    background: transparent !important;
+    color: #e9edef !important;
+    border-bottom: 1px solid #2a3942 !important;
+}
+
+body.dark-mode .forwardUser:hover {
+    background: #2a3942 !important;
+}
+
+body.dark-mode .forwardUser input[type="checkbox"] {
+    accent-color: #00a884;
+}
+
+body.dark-mode #confirmForwardBtn {
+    background: #00a884 !important;
+    color: white !important;
+}
+
+body.dark-mode #confirmForwardBtn:disabled {
+    background: #3a4a52 !important;
+    color: #8696a0 !important;
+}
