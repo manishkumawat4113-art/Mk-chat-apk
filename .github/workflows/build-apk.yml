@@ -50,8 +50,13 @@ jobs:
       - name: Fix Kotlin duplicate dependencies
         working-directory: android
         run: |
-          echo "configurations.all { resolutionStrategy.force 'org.jetbrains.kotlin:kotlin-stdlib:1.8.22' }" >> app/build.gradle
+          cat >> app/build.gradle <<'EOF'
 
+          configurations.all {
+                exclude group: 'org.jetbrains.kotlin', module: 'kotlin-stdlib-jdk7'
+                exclude group: 'org.jetbrains.kotlin', module: 'kotlin-stdlib-jdk8'
+            }
+           EOF
       - name: Build APK
         working-directory: android
         run: |
