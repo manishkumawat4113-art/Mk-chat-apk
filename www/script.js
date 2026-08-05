@@ -4230,7 +4230,61 @@ document.querySelector(
 // ============================================================
 
 async function loadChats() {
+// ============================================================
+// OFFLINE FIRST CHAT LIST
+// ============================================================
 
+if (!navigator.onLine) {
+
+    console.log(
+        "📴 Offline mode - Loading chats from IndexedDB"
+    );
+
+    try {
+
+        const offlineChats =
+            await MKOfflineDB.getAllChats();
+
+        console.log(
+            "📦 Offline chats found:",
+            offlineChats.length
+        );
+
+        // Agar offline chats saved hain
+        if (offlineChats.length > 0) {
+
+            // Temporary result object
+            result = {
+                success: true,
+                chats: offlineChats
+            };
+
+            // Neeche tumhara existing
+            // chat rendering code chalega.
+
+        } else {
+
+            console.log(
+                "📭 No offline chats available"
+            );
+
+            return;
+        }
+
+    } catch (error) {
+
+        console.error(
+            "❌ Offline chat database error:",
+            error
+        );
+
+        return;
+    }
+
+} else {
+
+    // Internet available hai
+    // Existing server code yahan chalega.
     let currentUser =
         JSON.parse(
             localStorage.getItem("currentUser")
