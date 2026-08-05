@@ -5052,7 +5052,7 @@ if (window.visualViewport) {
     );
 
 }
-});
+
 
 if (window.visualViewport) {
 
