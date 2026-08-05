@@ -4997,7 +4997,10 @@ socket.on("user_status", function(data) {
             }
 
         }
-    }function scrollChatToBottom() {
+    }
+    });
+    
+    function scrollChatToBottom() {
 
     const messages =
         document.querySelector("#messages");
