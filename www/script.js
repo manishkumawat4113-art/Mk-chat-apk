@@ -3908,6 +3908,29 @@ localStorage.getItem(
 "token"
 );
 
+  // ==================================================
+// OFFLINE FIRST — LOCAL CHAT LIST
+// ==================================================
+
+try {
+
+    const localChats = await getOfflineChats();
+
+    if (localChats && localChats.length > 0) {
+
+        renderChatList(localChats);
+
+    }
+
+} catch (error) {
+
+    console.log(
+        "Offline chat load error:",
+        error
+    );
+
+}  
+
 let response=
 await fetch(
 
@@ -3934,6 +3957,26 @@ if(!result.success){
 return;
 
 }
+
+// ==================================================
+// SAVE FRESH CHAT LIST OFFLINE
+// ==================================================
+
+try {
+
+    await saveOfflineChats(result.chats);
+
+    console.log("✅ Chat list saved offline");
+
+} catch (error) {
+
+    console.log(
+        "❌ Offline chat save error:",
+        error
+    );
+
+}    
+    
 
 let chatList=
 document.querySelector(
