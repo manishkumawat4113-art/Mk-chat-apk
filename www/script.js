@@ -540,7 +540,21 @@ window.addEventListener(
 
             const loggedIn =
                 await checkOfflineAutoLogin();
+            
+console.log(
+    "🔍 Offline Auto Login Result:",
+    loggedIn
+);
 
+console.log(
+    "🔍 Saved User:",
+    localStorage.getItem("currentUser")
+);
+
+console.log(
+    "🔍 Saved Token:",
+    localStorage.getItem("token")
+);
 
             // ==================================================
             // STEP 2: Login session mila
