@@ -1156,6 +1156,7 @@ let currentBio =
     ).textContent
     .trim();
 
+            let editBox =
                 document.createElement(
                     "div"
                 );
