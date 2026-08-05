@@ -638,14 +638,22 @@ console.log(
                 // CHAT LIST
                 // ==================================================
 
-                loadChats();
+                try {
 
+    await loadChats();
 
-                console.log(
-                    "✅ MK Chat Auto Login Complete"
-                );
+    console.log(
+        "✅ Chat list loaded successfully"
+    );
 
-            }
+} catch (error) {
+
+    console.error(
+        "❌ Chat list loading error:",
+        error
+    );
+
+                }
 
 
             // ==================================================
