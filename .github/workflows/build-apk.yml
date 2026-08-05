@@ -47,10 +47,10 @@ jobs:
         run: |
           npx cap sync android
 
-          - name: Fix Kotlin duplicate dependencies
-  working-directory: android
-  run: |
-    echo "configurations.all { resolutionStrategy.force 'org.jetbrains.kotlin:kotlin-stdlib:1.8.22' }" >> app/build.gradle
+      - name: Fix Kotlin duplicate dependencies
+        working-directory: android
+        run: |
+          echo "configurations.all { resolutionStrategy.force 'org.jetbrains.kotlin:kotlin-stdlib:1.8.22' }" >> app/build.gradle
 
       - name: Build APK
         working-directory: android
