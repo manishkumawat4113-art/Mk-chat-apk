@@ -523,6 +523,79 @@ loadChats();
     }
 );
 
+// ============================================================
+// MK CHAT - OFFLINE AUTO LOGIN
+// ============================================================
+
+async function checkOfflineAutoLogin() {
+
+    try {
+
+        // Normal login session
+        const token =
+            localStorage.getItem("token");
+
+        const currentUser =
+            localStorage.getItem("currentUser");
+
+        if (token && currentUser) {
+
+            console.log(
+                "✅ Normal session found - Auto Login"
+            );
+
+            return true;
+        }
+
+
+        // Offline database session
+        const offlineLogin =
+            await MKOfflineDB.getSetting(
+                "offlineLogin"
+            );
+
+
+        if (
+            offlineLogin &&
+            offlineLogin.user
+        ) {
+
+            console.log(
+                "📱 Offline Auto Login"
+            );
+
+            localStorage.setItem(
+                "token",
+                offlineLogin.token || ""
+            );
+
+            localStorage.setItem(
+                "currentUser",
+                JSON.stringify(
+                    offlineLogin.user
+                )
+            );
+
+            return true;
+        }
+
+
+        console.log(
+            "ℹ️ No saved login session"
+        );
+
+        return false;
+
+    } catch (error) {
+
+        console.error(
+            "❌ Offline Auto Login Error:",
+            error
+        );
+
+        return false;
+    }
+}
 /*
 // ============================================================
 // AUTO LOGIN
