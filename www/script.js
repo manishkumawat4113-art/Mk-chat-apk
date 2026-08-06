@@ -512,7 +512,10 @@ loadChats();
             );
 
             alert(
-                "Login Error! Internet check karein."
+        "LOGIN ERROR\n\n" +
+        "Name: " + (error.name || "Unknown") +
+        "\nMessage: " + (error.message || "No message") +
+        "\nStack: " + (error.stack || "No stack")
             );
 
         }
@@ -980,7 +983,12 @@ window.addEventListener(
                 error
             );
 
-
+alert(
+        "AUTO LOGIN ERROR\n\n" +
+        "Name: " + (error.name || "Unknown") +
+        "\nMessage: " + (error.message || "No message") +
+        "\nStack: " + (error.stack || "No stack")
+    );
             // Error hone par login screen
 
             screen1.style.display =
