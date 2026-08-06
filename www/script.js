@@ -4841,8 +4841,9 @@ async function loadChats() {
         console.log(
             "✅ PHASE 2: Profile displayed successfully"
         );
-
-    };                    // -----------------------------------------
+    };  
+                    }                  
+                        // -----------------------------------------
                     // OPEN CHAT SCREEN
                     // -----------------------------------------
 
