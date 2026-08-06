@@ -470,6 +470,18 @@ try {
         "✅ Offline login session saved"
     );
 
+    // ==================================================
+// SAVE PROFILE OFFLINE
+// ==================================================
+
+await saveOfflineProfile(
+    result.user
+);
+
+console.log(
+    "✅ PHASE 2: Login profile cached"
+);
+
 } catch (offlineError) {
 
     console.error(
@@ -767,6 +779,139 @@ let darkmode = document.querySelector("#darkmode");
 darkmode.addEventListener("click", function () {
     document.body.classList.toggle("dark-mode");
     });
+
+// ============================================================
+// MK CHAT - PHASE 2
+// OFFLINE PROFILE SYSTEM
+// ============================================================
+
+async function saveOfflineProfile(user) {
+
+    try {
+
+        console.log(
+            "💾 PHASE 2: Saving profile to IndexedDB..."
+        );
+
+        if (!user || !user.id) {
+
+            console.error(
+                "❌ PHASE 2: Invalid user profile"
+            );
+
+            alert(
+                "PROFILE ERROR\n\nUser profile data missing."
+            );
+
+            return false;
+        }
+
+
+        await MKOfflineDB.setSetting(
+            "profile_" + user.id,
+            user
+        );
+
+
+        console.log(
+            "✅ PHASE 2: Profile saved offline",
+            user
+        );
+
+
+        return true;
+
+
+    } catch (error) {
+
+        console.error(
+            "❌ PHASE 2: Profile save failed",
+            error
+        );
+
+        alert(
+            "OFFLINE PROFILE SAVE ERROR\n\n" +
+            "Name: " +
+            (error.name || "Unknown") +
+            "\nMessage: " +
+            (error.message || "Unknown error")
+        );
+
+        return false;
+    }
+}
+
+
+// ============================================================
+// LOAD OFFLINE PROFILE
+// ============================================================
+
+async function loadOfflineProfile(userId) {
+
+    try {
+
+        console.log(
+            "📦 PHASE 2: Loading offline profile..."
+        );
+
+
+        if (!userId) {
+
+            console.error(
+                "❌ PHASE 2: User ID missing"
+            );
+
+            alert(
+                "PROFILE LOAD ERROR\n\nUser ID missing."
+            );
+
+            return null;
+        }
+
+
+        const profile =
+            await MKOfflineDB.getSetting(
+                "profile_" + userId
+            );
+
+
+        if (!profile) {
+
+            console.log(
+                "📭 PHASE 2: No cached profile found"
+            );
+
+            return null;
+        }
+
+
+        console.log(
+            "✅ PHASE 2: Offline profile loaded",
+            profile
+        );
+
+
+        return profile;
+
+
+    } catch (error) {
+
+        console.error(
+            "❌ PHASE 2: Offline profile load failed",
+            error
+        );
+
+        alert(
+            "OFFLINE PROFILE LOAD ERROR\n\n" +
+            "Name: " +
+            (error.name || "Unknown") +
+            "\nMessage: " +
+            (error.message || "Unknown error")
+        );
+
+        return null;
+    }
+}
 
 // ============================================================
 // PROFILE ELEMENTS
@@ -4517,85 +4662,187 @@ async function loadChats() {
                         // =====================================
 
                         chatUserName.onclick =
-                            function () {
+    async function () {
 
-                                profileOpenedFrom =
-                                    "chat";
+        console.log(
+            "👤 PHASE 2: Profile opened"
+        );
 
+        profileOpenedFrom =
+            "chat";
 
-                                localStorage.setItem(
-                                    "selectedUserId",
-                                    chat.userId
-                                );
-
-
-                                document.querySelector(
-                                    "#profileName"
-                                ).textContent =
-                                    "👤 " +
-                                    (chat.name || "Unknown");
+        localStorage.setItem(
+            "selectedUserId",
+            chat.userId
+        );
 
 
-                                document.querySelector(
-                                    "#profileUsername"
-                                ).textContent =
-                                    "@" +
-                                    (chat.username || "");
+        // ==================================================
+        // PROFILE DATA
+        // ==================================================
+
+        let profileData = chat;
 
 
-                                document.querySelector(
-                                    "#profileEmail"
-                                ).textContent =
-                                    chat.email || "";
+        // ==================================================
+        // OFFLINE → INDEXEDDB PROFILE
+        // ==================================================
+
+        if (!navigator.onLine) {
+
+            console.log(
+                "📴 PHASE 2: Offline profile mode"
+            );
+
+            try {
+
+                const offlineProfile =
+                    await loadOfflineProfile(
+                        chat.userId
+                    );
 
 
-                                document.querySelector(
-                                    "#profileBio"
-                                ).textContent =
-                                    chat.about ||
-                                    "Hello! I'm using MK Chat";
+                if (offlineProfile) {
+
+                    console.log(
+                        "✅ PHASE 2: Cached profile found"
+                    );
+
+                    profileData =
+                        offlineProfile;
+
+                } else {
+
+                    console.log(
+                        "📭 PHASE 2: Cached profile unavailable"
+                    );
+
+                    alert(
+                        "OFFLINE PROFILE\n\n" +
+                        "Cached profile nahi mila.\n" +
+                        "Available chat information dikhayi jayegi."
+                    );
+
+                }
+
+            } catch (error) {
+
+                console.error(
+                    "❌ PHASE 2: Offline profile load error:",
+                    error
+                );
+
+                alert(
+                    "OFFLINE PROFILE ERROR\n\n" +
+                    "Name: " +
+                    (error.name || "Unknown") +
+                    "\nMessage: " +
+                    (error.message || "Unknown error")
+                );
+
+            }
+
+        } else {
+
+            console.log(
+                "🌐 PHASE 2: Online profile mode"
+            );
+
+        }
 
 
-                                const joinedDate =
-                                    new Date(
-                                        chat.createdAt
-                                    );
+        // ==================================================
+        // SHOW PROFILE
+        // ==================================================
+
+        document.querySelector(
+            "#profileName"
+        ).textContent =
+            "👤 " +
+            (profileData.name || "Unknown");
 
 
-                                document.querySelector(
-                                    "#profileJoined"
-                                ).textContent =
-                                    joinedDate.toLocaleDateString(
-                                        "en-IN",
-                                        {
-                                            day: "numeric",
-                                            month: "long",
-                                            year: "numeric"
-                                        }
-                                    );
+        document.querySelector(
+            "#profileUsername"
+        ).textContent =
+            "@" +
+            (profileData.username || "");
 
 
-                                editProfileBtn.textContent =
-                                    "Message";
+        document.querySelector(
+            "#profileEmail"
+        ).textContent =
+            profileData.email || "";
 
 
-                                editProfileBtn.dataset.mode =
-                                    "message";
+        document.querySelector(
+            "#profileBio"
+        ).textContent =
+            profileData.about ||
+            "Hello! I'm using MK Chat";
 
 
-                                chatScreen.style.display =
-                                    "none";
+        // ==================================================
+        // JOINED DATE
+        // ==================================================
+
+        if (profileData.createdAt) {
+
+            const joinedDate =
+                new Date(
+                    profileData.createdAt
+                );
 
 
-                                profileScreen.style.display =
-                                    "block";
-
-                            };
-
+            document.querySelector(
+                "#profileJoined"
+            ).textContent =
+                joinedDate.toLocaleDateString(
+                    "en-IN",
+                    {
+                        day: "numeric",
+                        month: "long",
+                        year: "numeric"
                     }
+                );
+
+        } else {
+
+            document.querySelector(
+                "#profileJoined"
+            ).textContent =
+                "";
+
+        }
 
 
-                    // -----------------------------------------
+        // ==================================================
+        // MESSAGE BUTTON
+        // ==================================================
+
+        editProfileBtn.textContent =
+            "Message";
+
+        editProfileBtn.dataset.mode =
+            "message";
+
+
+        // ==================================================
+        // SCREEN CHANGE
+        // ==================================================
+
+        chatScreen.style.display =
+            "none";
+
+        profileScreen.style.display =
+            "block";
+
+
+        console.log(
+            "✅ PHASE 2: Profile displayed successfully"
+        );
+
+    };                    // -----------------------------------------
                     // OPEN CHAT SCREEN
                     // -----------------------------------------
 
@@ -4718,6 +4965,111 @@ async function loadChats() {
 
         }
 
+        // ============================================================
+// PHASE 2B
+// CACHE OTHER USERS' PROFILES OFFLINE
+// ============================================================
+
+console.log(
+    "📦 PHASE 2B: Starting profile cache..."
+);
+
+for (
+    const chat of result.chats
+) {
+
+    try {
+
+        // ------------------------------------------
+        // Check user ID
+        // ------------------------------------------
+
+        if (!chat.userId) {
+
+            console.log(
+                "⚠️ PHASE 2B: Chat userId missing",
+                chat
+            );
+
+            continue;
+        }
+
+
+        // ------------------------------------------
+        // Prepare profile
+        // ------------------------------------------
+
+        const profile = {
+
+            id:
+                chat.userId,
+
+            userId:
+                chat.userId,
+
+            name:
+                chat.name || "",
+
+            username:
+                chat.username || "",
+
+            email:
+                chat.email || "",
+
+            about:
+                chat.about || "",
+
+            createdAt:
+                chat.createdAt || null
+
+        };
+
+
+        console.log(
+            "💾 PHASE 2B: Saving profile:",
+            profile.username
+        );
+
+
+        // ------------------------------------------
+        // Save profile in IndexedDB
+        // ------------------------------------------
+
+        await saveOfflineProfile(
+            profile
+        );
+
+
+        console.log(
+            "✅ PHASE 2B: Profile cached:",
+            profile.username
+        );
+
+    }
+
+    catch (error) {
+
+        console.error(
+            "❌ PHASE 2B: Profile cache error:",
+            error
+        );
+
+        alert(
+            "PHASE 2B PROFILE CACHE ERROR\n\n" +
+            "Name: " +
+            (error.name || "Unknown") +
+            "\nMessage: " +
+            (error.message || "Unknown error")
+        );
+
+    }
+
+}
+
+
+console.log(
+    "✅ PHASE 2B: All chat profiles cached"
+);
 
         // ====================================================
         // STEP 4
