@@ -456,7 +456,17 @@ loginBtn.addEventListener(
                     "token",
                     result.token
                 );
+await MKOfflineDB.setSetting(
+        "offlineLogin",
+        {
+            token: result.token,
+            user: result.user
+        }
+    );
 
+    console.log(
+        "✅ Offline login session saved"
+    );
 
                 // Username show
                 document.querySelector(
@@ -510,7 +520,7 @@ loadChats();
     }
 );
 
-
+/*
 // ============================================================
 // AUTO LOGIN
 // ============================================================
@@ -586,7 +596,7 @@ window.addEventListener(
         }
 
     }
-);
+);*/
 
 
 // ============================================================
@@ -833,6 +843,156 @@ document.querySelector(
     }
 );
 
+// ============================================================
+// AUTO LOGIN + OFFLINE AUTO LOGIN
+// ============================================================
+
+window.addEventListener(
+    "load",
+    async function () {
+
+        try {
+
+            // ==================================================
+            // STEP 1: Normal localStorage OR Offline DB session
+            // ==================================================
+
+            const loggedIn =
+                await checkOfflineAutoLogin();
+
+
+            // ==================================================
+            // STEP 2: Login session mila
+            // ==================================================
+
+            if (loggedIn) {
+
+                let savedUser =
+                    localStorage.getItem(
+                        "currentUser"
+                    );
+
+
+                if (!savedUser) {
+
+                    console.log(
+                        "❌ User data not found"
+                    );
+
+                    screen1.style.display =
+                        "block";
+
+                    homeScreen.style.display =
+                        "none";
+
+                    return;
+                }
+
+
+                let user =
+                    JSON.parse(
+                        savedUser
+                    );
+
+
+                // ==================================================
+                // USERNAME
+                // ==================================================
+
+                document.querySelector(
+                    "#userName"
+                ).textContent =
+                    user.username;
+
+
+                // ==================================================
+                // LOGIN SCREEN HIDE
+                // ==================================================
+
+                screen1.style.display =
+                    "none";
+
+
+                // ==================================================
+                // HOME SCREEN SHOW
+                // ==================================================
+
+                homeScreen.style.display =
+                    "block";
+
+
+                // ==================================================
+                // SOCKET ROOM
+                // ==================================================
+
+                // Internet hai tabhi socket connect/join
+                if (navigator.onLine) {
+
+                    joinUserRoom();
+
+                } else {
+
+                    console.log(
+                        "📴 Offline - Socket join skipped"
+                    );
+
+                }
+
+
+                // ==================================================
+                // CHAT LIST
+                // ==================================================
+
+                loadChats();
+
+
+                console.log(
+                    "✅ MK Chat Auto Login Complete"
+                );
+
+            }
+
+
+            // ==================================================
+            // STEP 3: Login session nahi mila
+            // ==================================================
+
+            else {
+
+                screen1.style.display =
+                    "block";
+
+                homeScreen.style.display =
+                    "none";
+
+
+                console.log(
+                    "➡️ Login required"
+                );
+
+            }
+
+
+        } catch (error) {
+
+            console.error(
+                "❌ Auto Login Error:",
+                error
+            );
+
+
+            // Error hone par login screen
+
+            screen1.style.display =
+                "block";
+
+            homeScreen.style.display =
+                "none";
+
+        }
+
+    }
+);
 // ============================================================
 // CLOSE PROFILE
 // ============================================================
@@ -3870,7 +4030,7 @@ clearChatBtn.addEventListener(
     }
 );
 
-async function loadChats(){
+/*async function loadChats(){
 let currentUser =
     JSON.parse(
         localStorage.getItem("currentUser")
@@ -4103,6 +4263,421 @@ div
 }
 
 );
+
+}*/
+
+// ============================================================
+// LOAD CHATS - OFFLINE FIRST + ONLINE SYNC
+// ============================================================
+
+async function loadChats() {
+
+    let currentUser =
+        JSON.parse(
+            localStorage.getItem("currentUser")
+        );
+
+    let token =
+        localStorage.getItem("token");
+
+
+    // ========================================================
+    // FUNCTION: RENDER CHAT LIST
+    // ========================================================
+
+    function renderChats(chats) {
+
+        let chatList =
+            document.querySelector("#chatList");
+
+        if (!chatList) return;
+
+        chatList.innerHTML = "";
+
+
+        chats.forEach(function(chat) {
+
+            let div =
+                document.createElement("div");
+
+            div.className = "chatItem";
+
+
+            let time =
+                new Date(
+                    chat.lastMessageTime || Date.now()
+                );
+
+
+            div.innerHTML = `
+
+                <div>
+
+                    <h3>
+                        ${chat.username || "Unknown"}
+
+                        ${
+                            chat.unreadCount > 0
+                            ?
+                            `<span class="unreadBadge">
+                                ${chat.unreadCount}
+                            </span>`
+                            :
+                            ""
+                        }
+
+                    </h3>
+
+
+                    <p class="lastMessage">
+
+                        ${chat.lastMessage || ""}
+
+
+                        ${
+                            String(chat.lastMessageSenderId) ===
+                            String(currentUser.id)
+
+                            ?
+
+                            (
+                                chat.lastMessageStatus === "read"
+
+                                ?
+
+                                " <span style='color:#2196F3'>✓✓</span>"
+
+                                :
+
+                                chat.lastMessageStatus === "delivered"
+
+                                ?
+
+                                " ✓✓"
+
+                                :
+
+                                " ✓"
+                            )
+
+                            :
+
+                            ""
+                        }
+
+                    </p>
+
+                </div>
+
+
+                <span class="lastTime">
+
+                    ${
+                        chat.lastMessageTime
+                        ?
+                        time.toLocaleTimeString(
+                            [],
+                            {
+                                hour: "2-digit",
+                                minute: "2-digit"
+                            }
+                        )
+                        :
+                        ""
+                    }
+
+                </span>
+
+            `;
+
+
+            // =================================================
+            // OPEN CHAT
+            // =================================================
+
+            div.addEventListener(
+                "click",
+                function () {
+
+                    localStorage.setItem(
+                        "selectedUserId",
+                        chat.userId
+                    );
+
+
+                    // -----------------------------------------
+                    // CHAT USERNAME
+                    // -----------------------------------------
+
+                    const chatUserName =
+                        document.querySelector(
+                            "#chatUserName"
+                        );
+
+
+                    if (chatUserName) {
+
+                        chatUserName.textContent =
+                            chat.username || "Unknown";
+
+
+                        // =====================================
+                        // USERNAME CLICK → PROFILE
+                        // =====================================
+
+                        chatUserName.onclick =
+                            function () {
+
+                                profileOpenedFrom =
+                                    "chat";
+
+
+                                localStorage.setItem(
+                                    "selectedUserId",
+                                    chat.userId
+                                );
+
+
+                                document.querySelector(
+                                    "#profileName"
+                                ).textContent =
+                                    "👤 " +
+                                    (chat.name || "Unknown");
+
+
+                                document.querySelector(
+                                    "#profileUsername"
+                                ).textContent =
+                                    "@" +
+                                    (chat.username || "");
+
+
+                                document.querySelector(
+                                    "#profileEmail"
+                                ).textContent =
+                                    chat.email || "";
+
+
+                                document.querySelector(
+                                    "#profileBio"
+                                ).textContent =
+                                    chat.about ||
+                                    "Hello! I'm using MK Chat";
+
+
+                                const joinedDate =
+                                    new Date(
+                                        chat.createdAt
+                                    );
+
+
+                                document.querySelector(
+                                    "#profileJoined"
+                                ).textContent =
+                                    joinedDate.toLocaleDateString(
+                                        "en-IN",
+                                        {
+                                            day: "numeric",
+                                            month: "long",
+                                            year: "numeric"
+                                        }
+                                    );
+
+
+                                editProfileBtn.textContent =
+                                    "Message";
+
+
+                                editProfileBtn.dataset.mode =
+                                    "message";
+
+
+                                chatScreen.style.display =
+                                    "none";
+
+
+                                profileScreen.style.display =
+                                    "block";
+
+                            };
+
+                    }
+
+
+                    // -----------------------------------------
+                    // OPEN CHAT SCREEN
+                    // -----------------------------------------
+
+                    homeScreen.style.display =
+                        "none";
+
+
+                    chatScreen.style.display =
+                        "block";
+
+
+                    // User status
+                    loadUserStatus();
+
+
+                    // Messages
+                    loadMessages();
+
+                }
+            );
+
+
+            chatList.appendChild(div);
+
+        });
+
+    }
+
+
+    // ========================================================
+    // STEP 1
+    // LOAD LOCAL CHATS IMMEDIATELY
+    // ========================================================
+
+    try {
+
+        const localChats =
+            await MKOfflineDB.getAllChats();
+
+
+        if (
+            localChats &&
+            localChats.length > 0
+        ) {
+
+            console.log(
+                "📦 Offline chats loaded:",
+                localChats.length
+            );
+
+
+            renderChats(localChats);
+
+        }
+
+    } catch (error) {
+
+        console.log(
+            "❌ Offline chat loading error:",
+            error
+        );
+
+    }
+
+
+    // ========================================================
+    // STEP 2
+    // IF INTERNET IS NOT AVAILABLE
+    // DON'T CALL SERVER
+    // ========================================================
+
+    if (!navigator.onLine) {
+
+        console.log(
+            "🔴 Offline mode — using local chats"
+        );
+
+        return;
+
+    }
+
+
+    // ========================================================
+    // STEP 3
+    // GET FRESH CHATS FROM SERVER
+    // ========================================================
+
+    try {
+
+        const response =
+            await fetch(
+
+                `${BACKEND_URL}/api/chats`,
+
+                {
+
+                    headers: {
+
+                        Authorization:
+                            "Bearer " + token
+
+                    }
+
+                }
+
+            );
+
+
+        const result =
+            await response.json();
+
+
+        if (!result.success) {
+
+            console.log(
+                "❌ Server chat loading failed"
+            );
+
+            return;
+
+        }
+
+
+        // ====================================================
+        // STEP 4
+        // SAVE FRESH CHATS INTO INDEXEDDB
+        // ====================================================
+
+        for (
+            const chat of result.chats
+        ) {
+
+            try {
+
+                await MKOfflineDB.saveChat(chat);
+
+            } catch (error) {
+
+                console.log(
+                    "❌ Chat offline save error:",
+                    error
+                );
+
+            }
+
+        }
+
+
+        console.log(
+            "☁️ Fresh chats synced to offline DB"
+        );
+
+
+        // ====================================================
+        // STEP 5
+        // SHOW FRESH SERVER DATA
+        // ====================================================
+
+        renderChats(result.chats);
+
+
+    } catch (error) {
+
+        console.log(
+            "🌐 Server unavailable:",
+            error
+        );
+
+
+        // Local data already screen par hai,
+        // isliye offline/error screen nahi dikhegi.
+
+    }
 
 }
 
