@@ -488,7 +488,7 @@ console.log(
         "⚠️ Offline DB save failed:",
         offlineError
     );
-
+}
 
                 // Username show
                 document.querySelector(
