@@ -456,7 +456,9 @@ loginBtn.addEventListener(
                     "token",
                     result.token
                 );
-await MKOfflineDB.setSetting(
+try {
+
+    await MKOfflineDB.setSetting(
         "offlineLogin",
         {
             token: result.token,
@@ -467,6 +469,14 @@ await MKOfflineDB.setSetting(
     console.log(
         "✅ Offline login session saved"
     );
+
+} catch (offlineError) {
+
+    console.error(
+        "⚠️ Offline DB save failed:",
+        offlineError
+    );
+
 
                 // Username show
                 document.querySelector(
