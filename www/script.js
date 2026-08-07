@@ -5865,4 +5865,239 @@ if (window.visualViewport) {
     );
 
 }
-  
+
+
+  // ============================================================
+// MK CHAT - OFFLINE AUTO LOGIN
+// PART 2C
+// ============================================================
+
+async function mkRestoreOfflineSession() {
+
+    try {
+
+        // ----------------------------------------------------
+        // If internet is available, let existing online
+        // authentication system handle everything.
+        // ----------------------------------------------------
+
+        if (navigator.onLine) {
+
+            console.log(
+                "🌐 Internet available - normal login/session flow"
+            );
+
+            return false;
+        }
+
+
+        console.log(
+            "📴 Internet OFF - checking cached MK session..."
+        );
+
+
+        // ----------------------------------------------------
+        // Get cached session from IndexedDB
+        // ----------------------------------------------------
+
+        const session =
+            await MKOfflineSession.get();
+
+
+        if (
+            !session ||
+            !session.userId ||
+            !session.user
+        ) {
+
+            console.log(
+                "ℹ️ No cached offline session available"
+            );
+
+            return false;
+        }
+
+
+        // ----------------------------------------------------
+        // Restore user
+        // ----------------------------------------------------
+
+        const cachedUser =
+            session.user;
+
+
+        const userId =
+            String(
+                session.userId
+            );
+
+
+        console.log(
+            "👤 Restoring offline account:",
+            userId
+        );
+
+
+        // ----------------------------------------------------
+        // Restore localStorage as well
+        //
+        // Existing MK Chat code still uses localStorage.
+        // We keep it synchronized for now.
+        // ----------------------------------------------------
+
+        localStorage.setItem(
+            "currentUser",
+            JSON.stringify(
+                cachedUser
+            )
+        );
+
+
+        if (session.token) {
+
+            localStorage.setItem(
+                "token",
+                session.token
+            );
+
+        }
+
+
+        // ----------------------------------------------------
+        // Update username
+        // ----------------------------------------------------
+
+        const userNameElement =
+            document.querySelector(
+                "#userName"
+            );
+
+
+        if (
+            userNameElement &&
+            cachedUser.username
+        ) {
+
+            userNameElement.textContent =
+                cachedUser.username;
+
+        }
+
+
+        // ----------------------------------------------------
+        // Open Home Screen
+        // ----------------------------------------------------
+
+        if (typeof screen1 !== "undefined") {
+
+            screen1.style.display =
+                "none";
+
+        }
+
+
+        if (
+            typeof homeScreen !== "undefined"
+        ) {
+
+            homeScreen.style.display =
+                "block";
+
+        }
+
+
+        // ----------------------------------------------------
+        // Mark application as offline session
+        // ----------------------------------------------------
+
+        window.MK_OFFLINE_SESSION_ACTIVE =
+            true;
+
+
+        window.MK_OFFLINE_USER =
+            cachedUser;
+
+
+        console.log(
+            "✅ Offline account restored successfully"
+        );
+
+
+        // ----------------------------------------------------
+        // IMPORTANT:
+        //
+        // Do NOT call loadChats() here yet.
+        //
+        // Part 3 will replace the current online-only
+        // chat loading with IndexedDB first.
+        // ----------------------------------------------------
+
+        return true;
+
+
+    } catch (error) {
+
+        console.error(
+            "❌ Offline session restore failed:",
+            error
+        );
+
+        return false;
+
+    }
+
+}
+
+
+// ============================================================
+// RUN OFFLINE SESSION CHECK
+// ============================================================
+
+async function mkStartOfflineSessionCheck() {
+
+    try {
+
+        await MKOfflineDB.ready;
+
+        await mkRestoreOfflineSession();
+
+    } catch (error) {
+
+        console.error(
+            "❌ Offline startup check failed:",
+            error
+        );
+
+    }
+
+}
+
+
+// ============================================================
+// START AFTER PAGE LOAD
+// ============================================================
+
+window.addEventListener(
+    "load",
+    function () {
+
+        mkStartOfflineSessionCheck();
+
+    }
+);
+
+
+// ============================================================
+// ALSO HANDLE INTERNET GOING OFFLINE
+// ============================================================
+
+window.addEventListener(
+    "mk:offline",
+    async function () {
+
+        console.log(
+            "📴 MK Chat switched to offline mode"
+        );
+
+    }
+);
