@@ -1005,7 +1005,292 @@ async function mkSetOfflineSetting(
     }
 
     await mkDBPut(
+        "settings",
+        {
 
+            key:
+                String(key),
+
+            value:
+                value,
+
+            updatedAt:
+                Date.now()
+
+        }
+    );
+
+}
+
+
+// ============================================================
+// GET SETTING
+// ============================================================
+
+async function mkGetOfflineSetting(
+    key
+) {
+
+    if (!key) {
+        return null;
+    }
+
+    const result =
+        await mkDBGet(
+            "settings",
+            String(key)
+        );
+
+    return result
+        ? result.value
+        : null;
+                    }
+// ============================================================
+// SAVE SYNC STATE
+// ============================================================
+
+async function mkSetSyncState(
+    key,
+    value
+) {
+
+    await mkDBPut(
+        "syncState",
+        {
+
+            key:
+                String(key),
+
+            value:
+                value,
+
+            updatedAt:
+                Date.now()
+
+        }
+    );
+
+}
+
+
+// ============================================================
+// GET SYNC STATE
+// ============================================================
+
+async function mkGetSyncState(
+    key
+) {
+
+    const result =
+        await mkDBGet(
+            "syncState",
+            String(key)
+        );
+
+    return result
+        ? result.value
+        : null;
+// ============================================================
+// SAVE SESSION
+// ============================================================
+
+async function mkSaveOfflineSession(
+    sessionData
+) {
+
+    if (!sessionData) {
+        return;
+    }
+
+    await mkDBPut(
+        "session",
+        {
+
+            key:
+                "current",
+
+            ...sessionData,
+
+            savedAt:
+                Date.now()
+
+        }
+    );
+
+}
+
+
+// ============================================================
+// GET SESSION
+// ============================================================
+
+async function mkGetOfflineSession() {
+
+    return await mkDBGet(
+        "session",
+        "current"
+    );
+
+}
+    // ============================================================
+// DELETE SESSION
+// ============================================================
+
+async function mkDeleteOfflineSession() {
+
+    await mkDBDelete(
+        "session",
+        "current"
+    );
+
+}
+
+
+// ============================================================
+// NETWORK STATUS
+// ============================================================
+
+function mkIsOnline() {
+
+    return (
+        navigator.onLine === true
+    );
+
+}
+
+
+// ============================================================
+// NETWORK EVENTS
+// ============================================================
+
+window.addEventListener(
+    "online",
+    function () {
+
+        console.log(
+            "🌐 MK Chat: Internet connected"
+        );
+
+        window.dispatchEvent(
+            new CustomEvent(
+                "mk:online"
+            )
+        );
+
+    }
+);
+
+
+window.addEventListener(
+    "offline",
+    function () {
+
+        console.log(
+            "📴 MK Chat: Internet disconnected"
+        );
+
+        window.dispatchEvent(
+            new CustomEvent(
+                "mk:offline"
+            )
+        );
+
+    }
+);
+    // ============================================================
+// EXPORT
+// ============================================================
+
+window.MKOfflineDB = {
+
+    ready:
+        mkOfflineDBReady,
+
+    saveUser:
+        mkSaveOfflineUser,
+
+    getUser:
+        mkGetOfflineUser,
+
+    saveChat:
+        mkSaveOfflineChat,
+
+    getAllChats:
+        mkGetOfflineChats,
+
+    saveMessage:
+        mkSaveOfflineMessage,
+
+    getMessages:
+        mkGetOfflineMessages,
+
+    savePendingMessage:
+        mkSavePendingMessage,
+
+    getPendingMessages:
+        mkGetPendingMessages,
+
+    removePendingMessage:
+        mkRemovePendingMessage,
+
+    savePendingProfileUpdate:
+        mkSavePendingProfileUpdate,
+
+    getPendingProfileUpdates:
+        mkGetPendingProfileUpdates,
+
+    setSetting:
+        mkSetOfflineSetting,
+
+    getSetting:
+        mkGetOfflineSetting,
+
+    setSyncState:
+        mkSetSyncState,
+
+    getSyncState:
+        mkGetSyncState,
+
+    saveSession:
+        mkSaveOfflineSession,
+
+    getSession:
+        mkGetOfflineSession,
+
+    deleteSession:
+        mkDeleteOfflineSession,
+
+    isOnline:
+        mkIsOnline
+
+};
+
+
+// ============================================================
+// START DATABASE IMMEDIATELY
+// ============================================================
+
+mkOfflineDBReady
+    .then(
+        function () {
+
+            console.log(
+                "✅ MK Offline DB initialized successfully"
+            );
+
+        }
+    )
+    .catch(
+        function (error) {
+
+            console.error(
+                "❌ MK Offline DB initialization failed:",
+                error
+            );
+
+        }
+    );
+    
 // ============================================================
 // SOCKET.IO CONNECTION
 // ============================================================
