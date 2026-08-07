@@ -456,39 +456,7 @@ loginBtn.addEventListener(
                     "token",
                     result.token
                 );
-try {
 
-    await MKOfflineDB.setSetting(
-        "offlineLogin",
-        {
-            token: result.token,
-            user: result.user
-        }
-    );
-
-    console.log(
-        "✅ Offline login session saved"
-    );
-
-    // ==================================================
-// SAVE PROFILE OFFLINE
-// ==================================================
-
-await saveOfflineProfile(
-    result.user
-);
-
-console.log(
-    "✅ PHASE 2: Login profile cached"
-);
-
-} catch (offlineError) {
-
-    console.error(
-        "⚠️ Offline DB save failed:",
-        offlineError
-    );
-}
 
                 // Username show
                 document.querySelector(
@@ -534,10 +502,7 @@ loadChats();
             );
 
             alert(
-        "LOGIN ERROR\n\n" +
-        "Name: " + (error.name || "Unknown") +
-        "\nMessage: " + (error.message || "No message") +
-        "\nStack: " + (error.stack || "No stack")
+        "Login Error! Internet check karein."
             );
 
         }
@@ -545,80 +510,7 @@ loadChats();
     }
 );
 
-// ============================================================
-// MK CHAT - OFFLINE AUTO LOGIN
-// ============================================================
 
-async function checkOfflineAutoLogin() {
-
-    try {
-
-        // Normal login session
-        const token =
-            localStorage.getItem("token");
-
-        const currentUser =
-            localStorage.getItem("currentUser");
-
-        if (token && currentUser) {
-
-            console.log(
-                "✅ Normal session found - Auto Login"
-            );
-
-            return true;
-        }
-
-
-        // Offline database session
-        const offlineLogin =
-            await MKOfflineDB.getSetting(
-                "offlineLogin"
-            );
-
-
-        if (
-            offlineLogin &&
-            offlineLogin.user
-        ) {
-
-            console.log(
-                "📱 Offline Auto Login"
-            );
-
-            localStorage.setItem(
-                "token",
-                offlineLogin.token || ""
-            );
-
-            localStorage.setItem(
-                "currentUser",
-                JSON.stringify(
-                    offlineLogin.user
-                )
-            );
-
-            return true;
-        }
-
-
-        console.log(
-            "ℹ️ No saved login session"
-        );
-
-        return false;
-
-    } catch (error) {
-
-        console.error(
-            "❌ Offline Auto Login Error:",
-            error
-        );
-
-        return false;
-    }
-}
-/*
 // ============================================================
 // AUTO LOGIN
 // ============================================================
@@ -694,7 +586,7 @@ window.addEventListener(
         }
 
     }
-);*/
+);
 
 
 // ============================================================
@@ -779,139 +671,6 @@ let darkmode = document.querySelector("#darkmode");
 darkmode.addEventListener("click", function () {
     document.body.classList.toggle("dark-mode");
     });
-
-// ============================================================
-// MK CHAT - PHASE 2
-// OFFLINE PROFILE SYSTEM
-// ============================================================
-
-async function saveOfflineProfile(user) {
-
-    try {
-
-        console.log(
-            "💾 PHASE 2: Saving profile to IndexedDB..."
-        );
-
-        if (!user || !user.id) {
-
-            console.error(
-                "❌ PHASE 2: Invalid user profile"
-            );
-
-            alert(
-                "PROFILE ERROR\n\nUser profile data missing."
-            );
-
-            return false;
-        }
-
-
-        await MKOfflineDB.setSetting(
-            "profile_" + user.id,
-            user
-        );
-
-
-        console.log(
-            "✅ PHASE 2: Profile saved offline",
-            user
-        );
-
-
-        return true;
-
-
-    } catch (error) {
-
-        console.error(
-            "❌ PHASE 2: Profile save failed",
-            error
-        );
-
-        alert(
-            "OFFLINE PROFILE SAVE ERROR\n\n" +
-            "Name: " +
-            (error.name || "Unknown") +
-            "\nMessage: " +
-            (error.message || "Unknown error")
-        );
-
-        return false;
-    }
-}
-
-
-// ============================================================
-// LOAD OFFLINE PROFILE
-// ============================================================
-
-async function loadOfflineProfile(userId) {
-
-    try {
-
-        console.log(
-            "📦 PHASE 2: Loading offline profile..."
-        );
-
-
-        if (!userId) {
-
-            console.error(
-                "❌ PHASE 2: User ID missing"
-            );
-
-            alert(
-                "PROFILE LOAD ERROR\n\nUser ID missing."
-            );
-
-            return null;
-        }
-
-
-        const profile =
-            await MKOfflineDB.getSetting(
-                "profile_" + userId
-            );
-
-
-        if (!profile) {
-
-            console.log(
-                "📭 PHASE 2: No cached profile found"
-            );
-
-            return null;
-        }
-
-
-        console.log(
-            "✅ PHASE 2: Offline profile loaded",
-            profile
-        );
-
-
-        return profile;
-
-
-    } catch (error) {
-
-        console.error(
-            "❌ PHASE 2: Offline profile load failed",
-            error
-        );
-
-        alert(
-            "OFFLINE PROFILE LOAD ERROR\n\n" +
-            "Name: " +
-            (error.name || "Unknown") +
-            "\nMessage: " +
-            (error.message || "Unknown error")
-        );
-
-        return null;
-    }
-}
 
 // ============================================================
 // PROFILE ELEMENTS
@@ -1074,162 +833,7 @@ document.querySelector(
     }
 );
 
-// ============================================================
-// AUTO LOGIN + OFFLINE AUTO LOGIN
-// ============================================================
-
-window.addEventListener(
-    "load",
-    async function () {
-
-        try {
-
-            // ==================================================
-            // STEP 1: Normal localStorage OR Offline DB session
-            // ==================================================
-
-            const loggedIn =
-                await checkOfflineAutoLogin();
-
-
-            // ==================================================
-            // STEP 2: Login session mila
-            // ==================================================
-
-            if (loggedIn) {
-
-                let savedUser =
-                    localStorage.getItem(
-                        "currentUser"
-                    );
-
-
-                if (!savedUser) {
-
-                    console.log(
-                        "❌ User data not found"
-                    );
-
-                    screen1.style.display =
-                        "block";
-
-                    homeScreen.style.display =
-                        "none";
-
-                    return;
-                }
-
-
-                let user =
-                    JSON.parse(
-                        savedUser
-                    );
-
-
-                // ==================================================
-                // USERNAME
-                // ==================================================
-
-                document.querySelector(
-                    "#userName"
-                ).textContent =
-                    user.username;
-
-
-                // ==================================================
-                // LOGIN SCREEN HIDE
-                // ==================================================
-
-                screen1.style.display =
-                    "none";
-
-
-                // ==================================================
-                // HOME SCREEN SHOW
-                // ==================================================
-
-                homeScreen.style.display =
-                    "block";
-
-
-                // ==================================================
-                // SOCKET ROOM
-                // ==================================================
-
-                // Internet hai tabhi socket connect/join
-                if (navigator.onLine) {
-
-                    joinUserRoom();
-
-                } else {
-
-                    console.log(
-                        "📴 Offline - Socket join skipped"
-                    );
-
-                }
-
-
-                // ==================================================
-                // CHAT LIST
-                // ==================================================
-
-                loadChats();
-
-
-                console.log(
-                    "✅ MK Chat Auto Login Complete"
-                );
-
-            }
-
-
-            // ==================================================
-            // STEP 3: Login session nahi mila
-            // ==================================================
-
-            else {
-
-                screen1.style.display =
-                    "block";
-
-                homeScreen.style.display =
-                    "none";
-
-
-                console.log(
-                    "➡️ Login required"
-                );
-
-            }
-
-
-        } catch (error) {
-
-            console.error(
-                "❌ Auto Login Error:",
-                error
-            );
-
-alert(
-        "AUTO LOGIN ERROR\n\n" +
-        "Name: " + (error.name || "Unknown") +
-        "\nMessage: " + (error.message || "No message") +
-        "\nStack: " + (error.stack || "No stack")
-    );
-            // Error hone par login screen
-
-            screen1.style.display =
-                "block";
-
-            homeScreen.style.display =
-                "none";
-
-        }
-
-    }
-);
-// ============================================================
+ // ============================================================
 // CLOSE PROFILE
 // ============================================================
 
@@ -1415,7 +1019,9 @@ searchInput.addEventListener(
                                 user._id
                             );
 
-                    // Profile show
+                    
+                            
+                            // Profile show
 
 document.querySelector(
     "#profileName"
@@ -1443,6 +1049,7 @@ document.querySelector(
 ).textContent =
     user.about ||
     "Hello! I'm using MK Chat";
+                            
                           const joinedDate =
     new Date(user.createdAt);
 
@@ -1503,6 +1110,8 @@ document.querySelector(
 
     }
 );
+
+
 // ============================================================
 // EDIT PROFILE / MESSAGE BUTTON
 // ============================================================
@@ -1618,7 +1227,8 @@ let currentBio =
                 editBox
             );
           
-// ====================================================
+
+            // ====================================================
             // CLOSE EDIT PROFILE
             // ====================================================
 
@@ -1707,6 +1317,7 @@ let currentBio =
 
 
                     try {
+                        
                       // ====================================================
                         // UPDATE PROFILE IN MONGODB
                         // ====================================================
@@ -1767,6 +1378,7 @@ let currentBio =
 
                         }
 
+                        
                   // ====================================================
                         // UPDATE PROFILE SCREEN
                         // ====================================================
