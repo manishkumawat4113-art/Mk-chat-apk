@@ -1044,7 +1044,10 @@ async function mkGetOfflineSetting(
     return result
         ? result.value
         : null;
-                    }
+
+}
+
+
 // ============================================================
 // SAVE SYNC STATE
 // ============================================================
@@ -1057,7 +1060,6 @@ async function mkSetSyncState(
     await mkDBPut(
         "syncState",
         {
-
             key:
                 String(key),
 
@@ -1066,7 +1068,6 @@ async function mkSetSyncState(
 
             updatedAt:
                 Date.now()
-
         }
     );
 
@@ -1090,6 +1091,8 @@ async function mkGetSyncState(
     return result
         ? result.value
         : null;
+
+}
 // ============================================================
 // SAVE SESSION
 // ============================================================
