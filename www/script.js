@@ -5866,6 +5866,65 @@ if (window.visualViewport) {
 
 }
 
+// ============================================================
+// REAL INTERNET CHECK
+// navigator.onLine par depend nahi karega
+// ============================================================
+
+async function mkCheckRealInternet() {
+
+    try {
+
+        const controller =
+            new AbortController();
+
+        const timeout =
+            setTimeout(
+                function () {
+
+                    controller.abort();
+
+                },
+                5000
+            );
+
+
+        const response =
+            await fetch(
+                BACKEND_URL,
+                {
+                    method: "GET",
+
+                    cache: "no-store",
+
+                    signal:
+                        controller.signal
+                }
+            );
+
+
+        clearTimeout(timeout);
+
+
+        console.log(
+            "🌐 Backend reachable:",
+            response.status
+        );
+
+
+        return true;
+
+    } catch (error) {
+
+        console.log(
+            "📴 Backend unreachable - offline mode"
+        );
+
+        return false;
+
+    }
+
+}
 
   // ============================================================
 // MK CHAT - OFFLINE AUTO LOGIN
@@ -5881,19 +5940,23 @@ async function mkRestoreOfflineSession() {
         // authentication system handle everything.
         // ----------------------------------------------------
 
-        if (navigator.onLine) {
-
-            console.log(
-                "🌐 Internet available - normal login/session flow"
-            );
-
-            return false;
-        }
+        const realInternet =
+    await mkCheckRealInternet();
 
 
-        console.log(
-            "📴 Internet OFF - checking cached MK session..."
-        );
+if (realInternet) {
+
+    console.log(
+        "🌐 Real internet available - normal login/session flow"
+    );
+
+    return false;
+}
+
+
+console.log(
+    "📴 Real internet unavailable - checking cached MK session..."
+);
 
 
         // ----------------------------------------------------
