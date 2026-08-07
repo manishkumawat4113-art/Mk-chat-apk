@@ -5,6 +5,1008 @@
 const BACKEND_URL ="https://mk-web-backend.onrender.com";
 
 // ============================================================
+// MK CHAT - OFFLINE DATABASE CORE
+// PART 1
+// IndexedDB based local database
+// ============================================================
+
+const MK_OFFLINE_DB_NAME = "MKChatOfflineDB";
+const MK_OFFLINE_DB_VERSION = 1;
+
+let mkOfflineDB = null;
+
+// ------------------------------------------------------------
+// DATABASE READY PROMISE
+// ------------------------------------------------------------
+
+const mkOfflineDBReady = new Promise(function (resolve, reject) {
+
+    if (!window.indexedDB) {
+
+        console.error(
+            "❌ IndexedDB is not supported in this browser."
+        );
+
+        reject(
+            new Error("IndexedDB not supported")
+        );
+
+        return;
+    }
+
+    const request = indexedDB.open(
+        MK_OFFLINE_DB_NAME,
+        MK_OFFLINE_DB_VERSION
+    );
+
+    // --------------------------------------------------------
+    // CREATE / UPDATE DATABASE
+    // --------------------------------------------------------
+
+    request.onupgradeneeded = function (event) {
+
+        const db = event.target.result;
+
+        console.log(
+            "🗄️ Creating / updating MK Offline Database..."
+        );
+
+
+        // ====================================================
+        // USERS
+        // ====================================================
+
+        if (!db.objectStoreNames.contains("users")) {
+
+            const usersStore =
+                db.createObjectStore(
+                    "users",
+                    {
+                        keyPath: "id"
+                    }
+                );
+
+            usersStore.createIndex(
+                "username",
+                "username",
+                {
+                    unique: false
+                }
+            );
+
+            usersStore.createIndex(
+                "email",
+                "email",
+                {
+                    unique: false
+                }
+            );
+
+        }
+
+
+        // ====================================================
+        // CHATS
+        // ====================================================
+
+        if (!db.objectStoreNames.contains("chats")) {
+
+            const chatsStore =
+                db.createObjectStore(
+                    "chats",
+                    {
+                        keyPath: "id"
+                    }
+                );
+
+            chatsStore.createIndex(
+                "updatedAt",
+                "updatedAt",
+                {
+                    unique: false
+                }
+            );
+
+            chatsStore.createIndex(
+                "userId",
+                "userId",
+                {
+                    unique: false
+                }
+            );
+
+        }
+
+
+        // ====================================================
+        // MESSAGES
+        // ====================================================
+
+        if (!db.objectStoreNames.contains("messages")) {
+
+            const messagesStore =
+                db.createObjectStore(
+                    "messages",
+                    {
+                        keyPath: "localId"
+                    }
+                );
+
+            messagesStore.createIndex(
+                "messageId",
+                "messageId",
+                {
+                    unique: false
+                }
+            );
+
+            messagesStore.createIndex(
+                "clientMessageId",
+                "clientMessageId",
+                {
+                    unique: false
+                }
+            );
+
+            messagesStore.createIndex(
+                "chatId",
+                "chatId",
+                {
+                    unique: false
+                }
+            );
+
+            messagesStore.createIndex(
+                "createdAt",
+                "createdAt",
+                {
+                    unique: false
+                }
+            );
+
+        }
+
+
+        // ====================================================
+        // PENDING MESSAGES
+        // ====================================================
+
+        if (!db.objectStoreNames.contains("pendingMessages")) {
+
+            const pendingStore =
+                db.createObjectStore(
+                    "pendingMessages",
+                    {
+                        keyPath: "clientMessageId"
+                    }
+                );
+
+            pendingStore.createIndex(
+                "chatId",
+                "chatId",
+                {
+                    unique: false
+                }
+            );
+
+            pendingStore.createIndex(
+                "createdAt",
+                "createdAt",
+                {
+                    unique: false
+                }
+            );
+
+            pendingStore.createIndex(
+                "status",
+                "status",
+                {
+                    unique: false
+                }
+            );
+
+        }
+
+
+        // ====================================================
+        // PROFILE UPDATES
+        // ====================================================
+
+        if (!db.objectStoreNames.contains("pendingProfileUpdates")) {
+
+            const profileStore =
+                db.createObjectStore(
+                    "pendingProfileUpdates",
+                    {
+                        keyPath: "id"
+                    }
+                );
+
+            profileStore.createIndex(
+                "createdAt",
+                "createdAt",
+                {
+                    unique: false
+                }
+            );
+
+        }
+
+
+        // ====================================================
+        // SETTINGS
+        // ====================================================
+
+        if (!db.objectStoreNames.contains("settings")) {
+
+            db.createObjectStore(
+                "settings",
+                {
+                    keyPath: "key"
+                }
+            );
+
+        }
+
+
+        // ====================================================
+        // SYNC STATE
+        // ====================================================
+
+        if (!db.objectStoreNames.contains("syncState")) {
+
+            db.createObjectStore(
+                "syncState",
+                {
+                    keyPath: "key"
+                }
+            );
+
+        }
+
+
+        // ====================================================
+        // APP SESSION
+        // ====================================================
+
+        if (!db.objectStoreNames.contains("session")) {
+
+            db.createObjectStore(
+                "session",
+                {
+                    keyPath: "key"
+                }
+            );
+
+        }
+
+    };
+
+
+    // --------------------------------------------------------
+    // DATABASE OPEN SUCCESS
+    // --------------------------------------------------------
+
+    request.onsuccess = function (event) {
+
+        mkOfflineDB =
+            event.target.result;
+
+        console.log(
+            "✅ MK Offline Database ready"
+        );
+
+        resolve(
+            mkOfflineDB
+        );
+
+    };
+
+
+    // --------------------------------------------------------
+    // DATABASE ERROR
+    // --------------------------------------------------------
+
+    request.onerror = function (event) {
+
+        console.error(
+            "❌ MK Offline Database error:",
+            event.target.error
+        );
+
+        reject(
+            event.target.error
+        );
+
+    };
+
+
+});
+
+
+// ============================================================
+// GENERIC STORE HELPERS
+// ============================================================
+
+async function mkDBPut(
+    storeName,
+    data
+) {
+
+    const db =
+        await mkOfflineDBReady;
+
+    return new Promise(
+        function (resolve, reject) {
+
+            const transaction =
+                db.transaction(
+                    storeName,
+                    "readwrite"
+                );
+
+            const store =
+                transaction.objectStore(
+                    storeName
+                );
+
+            const request =
+                store.put(data);
+
+            request.onsuccess =
+                function () {
+
+                    resolve(
+                        request.result
+                    );
+
+                };
+
+            request.onerror =
+                function () {
+
+                    reject(
+                        request.error
+                    );
+
+                };
+
+        }
+    );
+
+}
+
+
+// ============================================================
+// GET ONE ITEM
+// ============================================================
+
+async function mkDBGet(
+    storeName,
+    key
+) {
+
+    const db =
+        await mkOfflineDBReady;
+
+    return new Promise(
+        function (resolve, reject) {
+
+            const transaction =
+                db.transaction(
+                    storeName,
+                    "readonly"
+                );
+
+            const store =
+                transaction.objectStore(
+                    storeName
+                );
+
+            const request =
+                store.get(key);
+
+            request.onsuccess =
+                function () {
+
+                    resolve(
+                        request.result
+                    );
+
+                };
+
+            request.onerror =
+                function () {
+
+                    reject(
+                        request.error
+                    );
+
+                };
+
+        }
+    );
+
+}
+
+
+// ============================================================
+// GET ALL ITEMS
+// ============================================================
+
+async function mkDBGetAll(
+    storeName
+) {
+
+    const db =
+        await mkOfflineDBReady;
+
+    return new Promise(
+        function (resolve, reject) {
+
+            const transaction =
+                db.transaction(
+                    storeName,
+                    "readonly"
+                );
+
+            const store =
+                transaction.objectStore(
+                    storeName
+                );
+
+            const request =
+                store.getAll();
+
+            request.onsuccess =
+                function () {
+
+                    resolve(
+                        request.result || []
+                    );
+
+                };
+
+            request.onerror =
+                function () {
+
+                    reject(
+                        request.error
+                    );
+
+                };
+
+        }
+    );
+
+}
+
+
+// ============================================================
+// DELETE ONE ITEM
+// ============================================================
+
+async function mkDBDelete(
+    storeName,
+    key
+) {
+
+    const db =
+        await mkOfflineDBReady;
+
+    return new Promise(
+        function (resolve, reject) {
+
+            const transaction =
+                db.transaction(
+                    storeName,
+                    "readwrite"
+                );
+
+            const store =
+                transaction.objectStore(
+                    storeName
+                );
+
+            const request =
+                store.delete(key);
+
+            request.onsuccess =
+                function () {
+
+                    resolve(true);
+
+                };
+
+            request.onerror =
+                function () {
+
+                    reject(
+                        request.error
+                    );
+
+                };
+
+        }
+    );
+
+}
+
+
+// ============================================================
+// CLEAR STORE
+// ============================================================
+
+async function mkDBClear(
+    storeName
+) {
+
+    const db =
+        await mkOfflineDBReady;
+
+    return new Promise(
+        function (resolve, reject) {
+
+            const transaction =
+                db.transaction(
+                    storeName,
+                    "readwrite"
+                );
+
+            const store =
+                transaction.objectStore(
+                    storeName
+                );
+
+            const request =
+                store.clear();
+
+            request.onsuccess =
+                function () {
+
+                    resolve(true);
+
+                };
+
+            request.onerror =
+                function () {
+
+                    reject(
+                        request.error
+                    );
+
+                };
+
+        }
+    );
+
+}
+
+
+// ============================================================
+// SAVE USER
+// ============================================================
+
+async function mkSaveOfflineUser(user) {
+
+    if (!user) {
+        return;
+    }
+
+    const userId =
+        String(
+            user._id ||
+            user.id
+        );
+
+    if (!userId) {
+        return;
+    }
+
+    const data = {
+
+        ...user,
+
+        id: userId,
+
+        cachedAt:
+            Date.now()
+
+    };
+
+    await mkDBPut(
+        "users",
+        data
+    );
+
+}
+
+
+// ============================================================
+// GET USER
+// ============================================================
+
+async function mkGetOfflineUser(userId) {
+
+    if (!userId) {
+        return null;
+    }
+
+    return await mkDBGet(
+        "users",
+        String(userId)
+    );
+
+}
+
+
+// ============================================================
+// SAVE CHAT
+// ============================================================
+
+async function mkSaveOfflineChat(chat) {
+
+    if (!chat) {
+        return;
+    }
+
+    const chatId =
+        String(
+            chat._id ||
+            chat.id ||
+            chat.chatId
+        );
+
+    if (!chatId) {
+        return;
+    }
+
+    await mkDBPut(
+        "chats",
+        {
+            ...chat,
+
+            id: chatId,
+
+            cachedAt:
+                Date.now(),
+
+            updatedAt:
+                chat.updatedAt ||
+                Date.now()
+
+        }
+    );
+
+}
+
+
+// ============================================================
+// GET ALL CHATS
+// ============================================================
+
+async function mkGetOfflineChats() {
+
+    const chats =
+        await mkDBGetAll(
+            "chats"
+        );
+
+    chats.sort(
+        function (a, b) {
+
+            return (
+                new Date(
+                    b.updatedAt ||
+                    b.cachedAt ||
+                    0
+                ) -
+                new Date(
+                    a.updatedAt ||
+                    a.cachedAt ||
+                    0
+                )
+            );
+
+        }
+    );
+
+    return chats;
+
+}
+
+
+// ============================================================
+// SAVE MESSAGE
+// ============================================================
+
+async function mkSaveOfflineMessage(message) {
+
+    if (!message) {
+        return;
+    }
+
+    const mongoId =
+        message._id
+            ? String(message._id)
+            : null;
+
+    const clientId =
+        message.clientMessageId
+            ? String(message.clientMessageId)
+            : null;
+
+    const localId =
+        mongoId ||
+        clientId ||
+        (
+            "local_" +
+            Date.now() +
+            "_" +
+            Math.random()
+                .toString(36)
+                .substring(2, 10)
+        );
+
+    await mkDBPut(
+        "messages",
+        {
+
+            ...message,
+
+            localId:
+
+                String(
+                    localId
+                ),
+
+            messageId:
+                mongoId,
+
+            clientMessageId:
+                clientId,
+
+            cachedAt:
+                Date.now()
+
+        }
+    );
+
+}
+
+
+// ============================================================
+// GET CHAT MESSAGES
+// ============================================================
+
+async function mkGetOfflineMessages(
+    chatId
+) {
+
+    if (!chatId) {
+        return [];
+    }
+
+    const db =
+        await mkOfflineDBReady;
+
+    return new Promise(
+        function (resolve, reject) {
+
+            const transaction =
+                db.transaction(
+                    "messages",
+                    "readonly"
+                );
+
+            const store =
+                transaction.objectStore(
+                    "messages"
+                );
+
+            const index =
+                store.index(
+                    "chatId"
+                );
+
+            const request =
+                index.getAll(
+                    String(chatId)
+                );
+
+            request.onsuccess =
+                function () {
+
+                    const messages =
+                        request.result || [];
+
+                    messages.sort(
+                        function (a, b) {
+
+                            return (
+                                new Date(
+                                    a.createdAt ||
+                                    a.cachedAt ||
+                                    0
+                                ) -
+                                new Date(
+                                    b.createdAt ||
+                                    b.cachedAt ||
+                                    0
+                                )
+                            );
+
+                        }
+                    );
+
+                    resolve(
+                        messages
+                    );
+
+                };
+
+            request.onerror =
+                function () {
+
+                    reject(
+                        request.error
+                    );
+
+                };
+
+        }
+    );
+
+}
+
+
+// ============================================================
+// SAVE PENDING MESSAGE
+// ============================================================
+
+async function mkSavePendingMessage(message) {
+
+    if (!message) {
+        return;
+    }
+
+    if (!message.clientMessageId) {
+
+        console.error(
+            "❌ Pending message needs clientMessageId"
+        );
+
+        return;
+
+    }
+
+    await mkDBPut(
+        "pendingMessages",
+        {
+
+            ...message,
+
+            clientMessageId:
+                String(
+                    message.clientMessageId
+                ),
+
+            status:
+                message.status ||
+                "pending",
+
+            createdAt:
+                message.createdAt ||
+                Date.now(),
+
+            queuedAt:
+                Date.now()
+
+        }
+    );
+
+}
+
+
+// ============================================================
+// GET PENDING MESSAGES
+// ============================================================
+
+async function mkGetPendingMessages() {
+
+    return await mkDBGetAll(
+        "pendingMessages"
+    );
+
+}
+
+
+// ============================================================
+// DELETE PENDING MESSAGE
+// ============================================================
+
+async function mkRemovePendingMessage(
+    clientMessageId
+) {
+
+    if (!clientMessageId) {
+        return;
+    }
+
+    await mkDBDelete(
+        "pendingMessages",
+        String(
+            clientMessageId
+        )
+    );
+
+}
+
+
+// ============================================================
+// SAVE PENDING PROFILE UPDATE
+// ============================================================
+
+async function mkSavePendingProfileUpdate(
+    profileData
+) {
+
+    if (!profileData) {
+        return;
+    }
+
+    await mkDBPut(
+        "pendingProfileUpdates",
+        {
+
+            id:
+                "profile_" +
+                Date.now(),
+
+            data:
+                profileData,
+
+            createdAt:
+                Date.now(),
+
+            status:
+                "pending"
+
+        }
+    );
+
+}
+
+
+// ============================================================
+// GET PENDING PROFILE UPDATES
+// ============================================================
+
+async function mkGetPendingProfileUpdates() {
+
+    return await mkDBGetAll(
+        "pendingProfileUpdates"
+    );
+
+}
+
+
+// ============================================================
+// SAVE SETTING
+// ============================================================
+
+async function mkSetOfflineSetting(
+    key,
+    value
+) {
+
+    if (!key) {
+        return;
+    }
+
+    await mkDBPut(
+
+// ============================================================
 // SOCKET.IO CONNECTION
 // ============================================================
 const socket =
