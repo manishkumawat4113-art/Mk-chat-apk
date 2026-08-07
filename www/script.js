@@ -1292,6 +1292,210 @@ mkOfflineDBReady
 
         }
     );
+// ============================================================
+// MK CHAT - OFFLINE SESSION CACHE
+// PART 2A
+// ============================================================
+
+async function mkCacheCurrentSession(user, token) {
+
+    try {
+
+        if (!user) {
+            console.warn(
+                "⚠️ Cannot cache session: user missing"
+            );
+            return false;
+        }
+
+        const userId = String(
+            user._id ||
+            user.id ||
+            user.userId ||
+            ""
+        );
+
+        if (!userId) {
+            console.warn(
+                "⚠️ Cannot cache session: user ID missing"
+            );
+            return false;
+        }
+
+        const sessionData = {
+
+            userId: userId,
+
+            user: {
+                ...user,
+                _id: userId,
+                id: userId
+            },
+
+            token:
+                token ||
+                null,
+
+            lastOnlineLogin:
+                Date.now(),
+
+            lastSessionUpdate:
+                Date.now()
+
+        };
+
+        await MKOfflineDB.saveSession(
+            sessionData
+        );
+
+        // Also cache the user separately
+        await MKOfflineDB.saveUser(
+            {
+                ...user,
+
+                _id: userId,
+                id: userId
+
+            }
+        );
+
+        console.log(
+            "💾 Offline session cached:",
+            userId
+        );
+
+        return true;
+
+    } catch (error) {
+
+        console.error(
+            "❌ Failed to cache offline session:",
+            error
+        );
+
+        return false;
+    }
+
+}
+
+
+// ============================================================
+// GET CACHED SESSION
+// ============================================================
+
+async function mkGetCachedSession() {
+
+    try {
+
+        const session =
+            await MKOfflineDB.getSession();
+
+        if (!session) {
+
+            console.log(
+                "ℹ️ No offline session found"
+            );
+
+            return null;
+        }
+
+        console.log(
+            "📦 Offline session found:",
+            session.userId
+        );
+
+        return session;
+
+    } catch (error) {
+
+        console.error(
+            "❌ Failed to read offline session:",
+            error
+        );
+
+        return null;
+    }
+
+}
+
+
+// ============================================================
+// CLEAR CACHED SESSION
+// ============================================================
+
+async function mkClearCachedSession() {
+
+    try {
+
+        await MKOfflineDB.deleteSession();
+
+        console.log(
+            "🗑️ Offline session removed"
+        );
+
+        return true;
+
+    } catch (error) {
+
+        console.error(
+            "❌ Failed to clear offline session:",
+            error
+        );
+
+        return false;
+    }
+
+}
+
+
+// ============================================================
+// CHECK OFFLINE SESSION
+// ============================================================
+
+async function mkHasCachedSession() {
+
+    try {
+
+        const session =
+            await MKOfflineDB.getSession();
+
+        return !!(
+            session &&
+            session.userId
+        );
+
+    } catch (error) {
+
+        console.error(
+            "❌ Session check failed:",
+            error
+        );
+
+        return false;
+    }
+
+}
+
+
+// ============================================================
+// EXPORT SESSION HELPERS
+// ============================================================
+
+window.MKOfflineSession = {
+
+    save:
+        mkCacheCurrentSession,
+
+    get:
+        mkGetCachedSession,
+
+    clear:
+        mkClearCachedSession,
+
+    exists:
+        mkHasCachedSession
+
+};
     
 // ============================================================
 // SOCKET.IO CONNECTION
@@ -1745,7 +1949,18 @@ loginBtn.addEventListener(
                     "token",
                     result.token
                 );
+// ========================================================
+// OFFLINE SESSION CACHE
+// ========================================================
 
+await MKOfflineSession.save(
+    result.user,
+    result.token
+);
+
+console.log(
+    "💾 Login session saved for offline use"
+);
 
                 // Username show
                 document.querySelector(
