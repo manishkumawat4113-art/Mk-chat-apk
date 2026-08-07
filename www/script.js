@@ -1583,6 +1583,7 @@ sendBtn.addEventListener(
     }
 );
 
+
 // ============================================================
 // ENTER KEY SEND
 // ============================================================
@@ -1701,6 +1702,9 @@ function removePendingMessage(clientMessageId) {
 
     savePendingMessages();
 }
+
+
+
 // ============================================================
 // RETRY PENDING MESSAGES
 // ============================================================
@@ -1758,6 +1762,8 @@ async function sendMessage() {
 
         return;
     }
+
+    
     // ========================================================
     // NORMAL SEND MODE
     // ========================================================
@@ -1884,6 +1890,7 @@ loadChats();
 document.querySelector("#replyPreview").style.display = "none";
 
 }
+
 // ============================================================
 // EDIT MESSAGE FUNCTION
 // ============================================================
@@ -1964,7 +1971,8 @@ async function editMessage(
             "✅ Message edited:",
             result.updatedMessage
         );
-      
+
+        
   // ====================================================
         // UI UPDATE
         // ====================================================
@@ -2048,6 +2056,11 @@ async function editMessage(
     }
 
 }
+
+
+
+
+
 // ============================================================
 // RECEIVE REALTIME MESSAGE
 // ============================================================
@@ -2158,7 +2171,6 @@ else {
     }
 
         }
-
               // ====================================================
         // DELIVERY CONFIRMATION
         // Only receiver sends this
@@ -2239,7 +2251,6 @@ function showMessage(message) {
     let messageId =
     message._id ||
     message.id;
-
     // ========================================================
     // MESSAGE DIV
     // ========================================================
@@ -2355,6 +2366,8 @@ if (message.edited === true) {
 div.appendChild(
     textSpan
 );
+
+    
       // ========================================================
     // USER ID CHECK
     // ========================================================
@@ -2469,6 +2482,7 @@ div.appendChild(statusSpan);
 
     }
 
+        
       // ========================================================
     // RECEIVED MESSAGE
     // ========================================================
@@ -2550,6 +2564,7 @@ function addLongPressToMessage(
         }
     );
 
+    
       // ========================================================
     // MOBILE TOUCH END
     // ========================================================
@@ -2759,6 +2774,7 @@ async function deleteMessage(
 
 }
 
+
 // ============================================================
 // LOAD MESSAGES FROM BACKEND
 // ============================================================
@@ -2876,9 +2892,13 @@ socket.emit("read_messages", {
 
 }
 
+
 // ============================================================
 // OPEN MESSAGE MENU
 // ============================================================
+
+
+
 
 function openMessageMenu(message, event) {
 
@@ -2959,14 +2979,14 @@ function openMessageMenu(message, event) {
 
     }
 
-document.addEventListener("click",function (event) {
+/*document.addEventListener("click",function (event) {
 if (messageMenu.style.display ==="block"
             &&
     !messageMenu.contains(event.target)
     ) {
     messageMenu.style.display ="none";
       }
-    });
+    });*/
 
   // ========================================================
     // MENU SHOW
@@ -3224,6 +3244,7 @@ let messageElement =
             null;
  });
 
+
 // ============================================================
 // REPLY MESSAGE
 // ============================================================
@@ -3313,6 +3334,7 @@ editMessageBtn.addEventListener(
 
     }
 );
+
 let forwardSelectedUsers = [];
 
 let forwardMessageBtn =
@@ -3760,6 +3782,7 @@ closeForwardModal.addEventListener(
 
     }
 );
+
 async function clearChat() {
 
     let selectedUserId =
@@ -3878,7 +3901,7 @@ clearChatBtn.addEventListener(
     }
 );
 
-/*async function loadChats(){
+async function loadChats(){
 let currentUser =
     JSON.parse(
         localStorage.getItem("currentUser")
@@ -4111,629 +4134,6 @@ div
 }
 
 );
-
-}*/
-
-// ============================================================
-// LOAD CHATS - OFFLINE FIRST + ONLINE SYNC
-// ============================================================
-
-async function loadChats() {
-
-    let currentUser =
-        JSON.parse(
-            localStorage.getItem("currentUser")
-        );
-
-    let token =
-        localStorage.getItem("token");
-
-
-    // ========================================================
-    // FUNCTION: RENDER CHAT LIST
-    // ========================================================
-
-    function renderChats(chats) {
-
-        let chatList =
-            document.querySelector("#chatList");
-
-        if (!chatList) return;
-
-        chatList.innerHTML = "";
-
-
-        chats.forEach(function(chat) {
-
-            let div =
-                document.createElement("div");
-
-            div.className = "chatItem";
-
-
-            let time =
-                new Date(
-                    chat.lastMessageTime || Date.now()
-                );
-
-
-            div.innerHTML = `
-
-                <div>
-
-                    <h3>
-                        ${chat.username || "Unknown"}
-
-                        ${
-                            chat.unreadCount > 0
-                            ?
-                            `<span class="unreadBadge">
-                                ${chat.unreadCount}
-                            </span>`
-                            :
-                            ""
-                        }
-
-                    </h3>
-
-
-                    <p class="lastMessage">
-
-                        ${chat.lastMessage || ""}
-
-
-                        ${
-                            String(chat.lastMessageSenderId) ===
-                            String(currentUser.id)
-
-                            ?
-
-                            (
-                                chat.lastMessageStatus === "read"
-
-                                ?
-
-                                " <span style='color:#2196F3'>✓✓</span>"
-
-                                :
-
-                                chat.lastMessageStatus === "delivered"
-
-                                ?
-
-                                " ✓✓"
-
-                                :
-
-                                " ✓"
-                            )
-
-                            :
-
-                            ""
-                        }
-
-                    </p>
-
-                </div>
-
-
-                <span class="lastTime">
-
-                    ${
-                        chat.lastMessageTime
-                        ?
-                        time.toLocaleTimeString(
-                            [],
-                            {
-                                hour: "2-digit",
-                                minute: "2-digit"
-                            }
-                        )
-                        :
-                        ""
-                    }
-
-                </span>
-
-            `;
-
-
-            // =================================================
-            // OPEN CHAT
-            // =================================================
-
-            div.addEventListener(
-                "click",
-                function () {
-
-                    localStorage.setItem(
-                        "selectedUserId",
-                        chat.userId
-                    );
-
-
-                    // -----------------------------------------
-                    // CHAT USERNAME
-                    // -----------------------------------------
-
-                    const chatUserName =
-                        document.querySelector(
-                            "#chatUserName"
-                        );
-
-
-                    if (chatUserName) {
-
-                        chatUserName.textContent =
-                            chat.username || "Unknown";
-
-
-                        // =====================================
-                        // USERNAME CLICK → PROFILE
-                        // =====================================
-
-                        chatUserName.onclick =
-    async function () {
-
-        console.log(
-            "👤 PHASE 2: Profile opened"
-        );
-
-        profileOpenedFrom =
-            "chat";
-
-        localStorage.setItem(
-            "selectedUserId",
-            chat.userId
-        );
-
-
-        // ==================================================
-        // PROFILE DATA
-        // ==================================================
-
-        let profileData = chat;
-
-
-        // ==================================================
-        // OFFLINE → INDEXEDDB PROFILE
-        // ==================================================
-
-        if (!navigator.onLine) {
-
-            console.log(
-                "📴 PHASE 2: Offline profile mode"
-            );
-
-            try {
-
-                const offlineProfile =
-                    await loadOfflineProfile(
-                        chat.userId
-                    );
-
-
-                if (offlineProfile) {
-
-                    console.log(
-                        "✅ PHASE 2: Cached profile found"
-                    );
-
-                    profileData =
-                        offlineProfile;
-
-                } else {
-
-                    console.log(
-                        "📭 PHASE 2: Cached profile unavailable"
-                    );
-
-                    alert(
-                        "OFFLINE PROFILE\n\n" +
-                        "Cached profile nahi mila.\n" +
-                        "Available chat information dikhayi jayegi."
-                    );
-
-                }
-
-            } catch (error) {
-
-                console.error(
-                    "❌ PHASE 2: Offline profile load error:",
-                    error
-                );
-
-                alert(
-                    "OFFLINE PROFILE ERROR\n\n" +
-                    "Name: " +
-                    (error.name || "Unknown") +
-                    "\nMessage: " +
-                    (error.message || "Unknown error")
-                );
-
-            }
-
-        } else {
-
-            console.log(
-                "🌐 PHASE 2: Online profile mode"
-            );
-
-        }
-
-
-        // ==================================================
-        // SHOW PROFILE
-        // ==================================================
-
-        document.querySelector(
-            "#profileName"
-        ).textContent =
-            "👤 " +
-            (profileData.name || "Unknown");
-
-
-        document.querySelector(
-            "#profileUsername"
-        ).textContent =
-            "@" +
-            (profileData.username || "");
-
-
-        document.querySelector(
-            "#profileEmail"
-        ).textContent =
-            profileData.email || "";
-
-
-        document.querySelector(
-            "#profileBio"
-        ).textContent =
-            profileData.about ||
-            "Hello! I'm using MK Chat";
-
-
-        // ==================================================
-        // JOINED DATE
-        // ==================================================
-
-        if (profileData.createdAt) {
-
-            const joinedDate =
-                new Date(
-                    profileData.createdAt
-                );
-
-
-            document.querySelector(
-                "#profileJoined"
-            ).textContent =
-                joinedDate.toLocaleDateString(
-                    "en-IN",
-                    {
-                        day: "numeric",
-                        month: "long",
-                        year: "numeric"
-                    }
-                );
-
-        } else {
-
-            document.querySelector(
-                "#profileJoined"
-            ).textContent =
-                "";
-
-        }
-
-
-        // ==================================================
-        // MESSAGE BUTTON
-        // ==================================================
-
-        editProfileBtn.textContent =
-            "Message";
-
-        editProfileBtn.dataset.mode =
-            "message";
-
-
-        // ==================================================
-        // SCREEN CHANGE
-        // ==================================================
-
-        chatScreen.style.display =
-            "none";
-
-        profileScreen.style.display =
-            "block";
-
-
-        console.log(
-            "✅ PHASE 2: Profile displayed successfully"
-        );
-    };                    
-                    }               
-                        // -----------------------------------------
-                    // OPEN CHAT SCREEN
-                    // -----------------------------------------
-
-                    homeScreen.style.display =
-                        "none";
-
-
-                    chatScreen.style.display =
-                        "block";
-
-
-                    // User status
-                    loadUserStatus();
-
-
-                    // Messages
-                    loadMessages();
-
-                }
-            );
-
-
-            chatList.appendChild(div);
-
-        });
-
-    }
-
-
-    // ========================================================
-    // STEP 1
-    // LOAD LOCAL CHATS IMMEDIATELY
-    // ========================================================
-
-    try {
-
-        const localChats =
-            await MKOfflineDB.getAllChats();
-
-
-        if (
-            localChats &&
-            localChats.length > 0
-        ) {
-
-            console.log(
-                "📦 Offline chats loaded:",
-                localChats.length
-            );
-
-
-            renderChats(localChats);
-
-        }
-
-    } catch (error) {
-
-        console.log(
-            "❌ Offline chat loading error:",
-            error
-        );
-
-    }
-
-
-    // ========================================================
-    // STEP 2
-    // IF INTERNET IS NOT AVAILABLE
-    // DON'T CALL SERVER
-    // ========================================================
-
-    if (!navigator.onLine) {
-
-        console.log(
-            "🔴 Offline mode — using local chats"
-        );
-
-        return;
-
-    }
-
-
-    // ========================================================
-    // STEP 3
-    // GET FRESH CHATS FROM SERVER
-    // ========================================================
-
-    try {
-
-        const response =
-            await fetch(
-
-                `${BACKEND_URL}/api/chats`,
-
-                {
-
-                    headers: {
-
-                        Authorization:
-                            "Bearer " + token
-
-                    }
-
-                }
-
-            );
-
-
-        const result =
-            await response.json();
-
-
-        if (!result.success) {
-
-            console.log(
-                "❌ Server chat loading failed"
-            );
-
-            return;
-
-        }
-
-        // ============================================================
-// PHASE 2B
-// CACHE OTHER USERS' PROFILES OFFLINE
-// ============================================================
-
-console.log(
-    "📦 PHASE 2B: Starting profile cache..."
-);
-
-for (
-    const chat of result.chats
-) {
-
-    try {
-
-        // ------------------------------------------
-        // Check user ID
-        // ------------------------------------------
-
-        if (!chat.userId) {
-
-            console.log(
-                "⚠️ PHASE 2B: Chat userId missing",
-                chat
-            );
-
-            continue;
-        }
-
-
-        // ------------------------------------------
-        // Prepare profile
-        // ------------------------------------------
-
-        const profile = {
-
-            id:
-                chat.userId,
-
-            userId:
-                chat.userId,
-
-            name:
-                chat.name || "",
-
-            username:
-                chat.username || "",
-
-            email:
-                chat.email || "",
-
-            about:
-                chat.about || "",
-
-            createdAt:
-                chat.createdAt || null
-
-        };
-
-
-        console.log(
-            "💾 PHASE 2B: Saving profile:",
-            profile.username
-        );
-
-
-        // ------------------------------------------
-        // Save profile in IndexedDB
-        // ------------------------------------------
-
-        await saveOfflineProfile(
-            profile
-        );
-
-
-        console.log(
-            "✅ PHASE 2B: Profile cached:",
-            profile.username
-        );
-
-    }
-
-    catch (error) {
-
-        console.error(
-            "❌ PHASE 2B: Profile cache error:",
-            error
-        );
-
-        alert(
-            "PHASE 2B PROFILE CACHE ERROR\n\n" +
-            "Name: " +
-            (error.name || "Unknown") +
-            "\nMessage: " +
-            (error.message || "Unknown error")
-        );
-
-    }
-
-}
-
-
-console.log(
-    "✅ PHASE 2B: All chat profiles cached"
-);
-
-        // ====================================================
-        // STEP 4
-        // SAVE FRESH CHATS INTO INDEXEDDB
-        // ====================================================
-
-        for (
-            const chat of result.chats
-        ) {
-
-            try {
-
-                await MKOfflineDB.saveChat(chat);
-
-            } catch (error) {
-
-                console.log(
-                    "❌ Chat offline save error:",
-                    error
-                );
-
-            }
-
-        }
-
-
-        console.log(
-            "☁️ Fresh chats synced to offline DB"
-        );
-
-
-        // ====================================================
-        // STEP 5
-        // SHOW FRESH SERVER DATA
-        // ====================================================
-
-        renderChats(result.chats);
-
-
-    } catch (error) {
-
-        console.log(
-            "🌐 Server unavailable:",
-            error
-        );
-
-
-        // Local data already screen par hai,
-        // isliye offline/error screen nahi dikhegi.
-
-    }
 
 }
 
